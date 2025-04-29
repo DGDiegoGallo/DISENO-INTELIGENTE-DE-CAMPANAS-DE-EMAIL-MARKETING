@@ -3,3 +3,72 @@
  * Este archivo está vacío para evitar conflictos con Bootstrap y Tailwind
  * Pueden agregarse estilos personalizados específicos de la aplicación cuando sea necesario
  */
+
+/* Animaciones de transición entre vistas */
+.view-container {
+  width: 100%;
+}
+
+.view-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.view-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.view-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.view-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* --- Transición de Deslizamiento Lateral --- */
+.slide-enter {
+  /* Empieza fuera de la pantalla a la derecha */
+  transform: translateX(100%); 
+  opacity: 0.8; /* Opcional: ligero fade-in */
+}
+
+.slide-enter-active {
+  /* Se desliza a la posición normal */
+  transform: translateX(0%);
+  opacity: 1;
+  transition: transform 300ms ease-out, opacity 300ms ease-out;
+}
+
+.slide-exit {
+  /* Está en la posición normal */
+  transform: translateX(0%);
+  opacity: 1;
+}
+
+.slide-exit-active {
+  /* Se desliza fuera de la pantalla a la derecha */
+  transform: translateX(100%); 
+  opacity: 0.8; /* Opcional: ligero fade-out */
+  transition: transform 300ms ease-in, opacity 300ms ease-in;
+}
+
+/* Contenedor para asegurar que las vistas no se superpongan incorrectamente durante la transición */
+.view-wrapper {
+  position: relative; /* Necesario para que position: absolute funcione dentro */
+  overflow: hidden; /* Ocultar contenido que se desliza fuera */
+  width: 100%;
+  min-height: calc(100vh - 56px - 40px); /* Ajustar altura: vh - navbar - padding */
+}
+
+.view-wrapper > div { /* Aplica a los hijos directos: CSSTransition > div */
+  position: absolute; /* Permite que las vistas se superpongan durante la transición */
+  width: 100%;
+  top: 0;
+  left: 0;
+}

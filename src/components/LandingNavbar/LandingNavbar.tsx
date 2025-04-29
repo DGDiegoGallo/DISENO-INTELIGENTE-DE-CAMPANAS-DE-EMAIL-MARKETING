@@ -1,54 +1,30 @@
 import React from 'react';
-import { FaUserCircle } from 'react-icons/fa'; // Icono de usuario de ejemplo
+import { FaUserCircle } from 'react-icons/fa'; // Icono de usuario para login
+import { Link } from 'react-router-dom';
 import logoImage from '../../assets/images/Horiz.Negativo.png'; // Importar la imagen del logo negativo
+import 'bootstrap/dist/css/bootstrap.min.css'; // Importamos Bootstrap explícitamente
 
 const LandingNavbar: React.FC = () => {
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark w-100" style={{ backgroundColor: '#282A5B' }}>
-      <div className="container">
-        {/* Logo a la izquierda */}
+    <nav className="navbar navbar-dark" style={{ backgroundColor: '#282A5B', padding: '10px 20px' }}>
+      <div className="container-fluid">
+        {/* Logo */}
         <a className="navbar-brand" href="#">
-          <img 
-            src={logoImage} 
-            alt="Logo de la empresa" 
-            height="40"
-          />
+          <img src={logoImage} alt="TISYIKI" height="40" />
         </a>
         
-        {/* Botón hamburguesa para móviles */}
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span className="navbar-toggler-icon"></span>
-        </button>
-        
-        {/* División de la navbar en tres partes */}
-        <div className="collapse navbar-collapse" id="navbarNav">
-          {/* Espacio vacío a la izquierda para empujar enlaces al centro */}
-          <div className="flex-fill d-flex justify-content-end">
-            <div style={{ width: '100px' }}></div>
-          </div>
-          
-          {/* Enlaces centrados */}
-          <ul className="navbar-nav mx-auto">
-            <li className="nav-item">
-              <a className="nav-link text-white fw-bold mx-3" href="#">Inicio</a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link text-white fw-bold mx-3" href="#">Campaña</a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link text-white fw-bold mx-3" href="#">Capacitación</a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link text-white fw-bold mx-3" href="#">Soporte</a>
-            </li>
-          </ul>
-          
-          {/* Inicio de sesión a la derecha */}
-          <div className="flex-fill d-flex justify-content-end">
-            <a href="#" className="text-decoration-none me-2 text-white">Iniciar Sesión</a>
-            <FaUserCircle size={28} className="text-white cursor-pointer" />
-          </div>
+        {/* Enlaces centrales */}
+        <div className="navbar-nav mx-auto flex-row">
+          <a className="nav-link text-white px-3" href="#">Inicio</a>
+          <a className="nav-link text-white px-3" href="#">Campaña</a>
+          <a className="nav-link text-white px-3" href="#">Capacitación</a>
+          <a className="nav-link text-white px-3" href="#">Soporte</a>
         </div>
+        
+        {/* Icono de usuario */}
+        <Link to="/login" className="text-white">
+          <FaUserCircle size={25} />
+        </Link>
       </div>
     </nav>
   );

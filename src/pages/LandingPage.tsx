@@ -73,7 +73,8 @@ const LandingPage: React.FC = () => {
         features={features}
       />
       <Benefits 
-        title="Optimiza tus campañas\ny ahorra tiempo"
+        title={`Optimiza tus campañas
+y ahorra tiempo`}
         benefits={benefits}
       />
       <IntegrationPartners 
@@ -81,7 +82,9 @@ const LandingPage: React.FC = () => {
         title="Conecta tus herramientas favoritas" 
       />
       <CallToAction 
-        title="Automatiza, personaliza y\nconquista: tu nueva manera de\nhacer email marketing"
+        title={`Automatiza, personaliza y
+conquista: tu nueva manera de
+hacer email marketing`}
         buttonText="Comenzar"
         onButtonClick={handleButtonClick} 
       />
