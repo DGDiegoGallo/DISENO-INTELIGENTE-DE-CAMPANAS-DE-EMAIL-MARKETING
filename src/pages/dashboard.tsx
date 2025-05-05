@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import '../App.css';
 import Sidebar from '../components/Sidebar/Sidebar';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
@@ -8,20 +8,21 @@ import { CSSTransition } from 'react-transition-group';
 import InicioView from '../components/views/InicioView';
 import CampaignsView from '../components/views/CampaignsView';
 import CreateCampaignView from '../components/views/CreateCampaignView';
+import ContactView from '../components/views/ContactView';
+import CrmDataView from '../components/views/ABTestingView'; // Importar CrmDataView desde el archivo ABTestingView.tsx
+import ABTestingListView from '../components/views/ABTestingListView'; // Importar la nueva vista de lista para Pruebas A/B
+import CreateABTestView from '../components/views/CreateABTestView'; // Importar la nueva vista de creación
+import MetricsView from '../components/views/MetricsView'; // Importar la vista real de Métricas
+import TrainingView from '../components/views/TrainingView'; // Importar la vista real de Capacitación
+import RecommendationView from '../components/views/RecommendationView'; // Importar la nueva vista de Recomendación
+import SentimentAnalysisView from '../components/views/SentimentAnalysisView'; // Importar la nueva vista de Análisis de sentimiento
+import SegmentationView from '../components/views/SegmentationView'; // Importar la nueva vista de Segmentación de campañas
 
 // Importar Layout
 import DashboardLayout from '../layouts/DashboardLayout';
 
 // --- Componentes Placeholder (Movidos fuera) ---
-const ContactsView = () => <div>Contenido de Contactos</div>;
-const CrmDataView = () => <div>Contenido de Datos CRM</div>;
-const ABTestingView = () => <div>Contenido de Pruebas A/B</div>;
-const MetricsView = () => <div>Contenido de Métricas de rendimiento</div>;
-const TrainingView = () => <div>Contenido de Capacitación</div>;
-const RecommendationsView = () => <div>Contenido de Recomendación de campaña</div>;
-const SentimentAnalysisView = () => <div>Contenido de Análisis de sentimiento</div>;
-const SegmentationView = () => <div>Contenido de Segmentación de campañas</div>;
-const SupportView = () => <div>Contenido de Soporte</div>;
+const SupportView = () => <div style={{padding: '20px'}}>Contenido de Soporte</div>;
 
 // --- Datos Estáticos (Movidos fuera) ---
 // TODO: Estos datos deberían venir de una API o estado global en una app real
@@ -32,7 +33,7 @@ const emailChartData = {
       data: [74, 26],
       backgroundColor: [
         '#282A5B',
-        '#FF3A44',
+        '#F21A2B',
       ],
       borderWidth: 0,
     },
@@ -159,17 +160,21 @@ function Dashboard() {
       case 'Campañas':
         return <CampaignsView onShowCreate={handleShowCreateCampaign} />;
       case 'Contactos':
-        return <ContactsView />;
+        return <ContactView />;
       case 'Datos CRM':
-        return <CrmDataView />;
-      case 'Pruebas A/B':
-        return <ABTestingView />;
+        return <CrmDataView />; // Usar CrmDataView importado
+      case 'Pruebas A/B': 
+        // Pasar la función de navegación
+        return <ABTestingListView onNavigate={handleViewChange} />;
+      case 'Crear pruebas A/B':
+        return <CreateABTestView onNavigate={handleViewChange} />;
       case 'Metricas': 
+        // Ahora usa el componente importado
         return <MetricsView />;
       case 'Capacitacion': 
         return <TrainingView />;
       case 'Recomendacion': 
-        return <RecommendationsView />;
+        return <RecommendationView />;
       case 'Analisis': 
         return <SentimentAnalysisView />;
       case 'Segmentacion': 

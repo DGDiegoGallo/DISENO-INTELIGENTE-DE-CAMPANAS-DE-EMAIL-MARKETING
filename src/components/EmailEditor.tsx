@@ -1,0 +1,235 @@
+import React, { useRef, useState } from 'react';
+import EmailEditor from 'react-email-editor';
+
+// Definir una interfaz simple para el diseño
+export interface Design extends Record<string, unknown> {
+  body: {
+    rows: Array<Record<string, unknown>>;
+    values: Record<string, unknown>;
+  };
+  counters: Record<string, unknown>;
+  schemaVersion: number;
+}
+
+// Usamos un tipo más específico para la referencia del editor
+type EditorInstance = {
+  saveDesign: (callback: (design: Design) => void) => void;
+  exportHtml: (callback: (data: { html: string }) => void) => void;
+  loadDesign: (design: Design) => void;
+};
+
+interface EmailEditorComponentProps {
+  onSave: (design: Design, html: string) => void;
+  onClose: () => void;
+  initialDesign?: Design;
+}
+
+const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({ 
+  onSave, 
+  onClose,
+  initialDesign 
+}) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const emailEditorRef = useRef<any>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const saveDesign = () => {
+    try {
+      if (emailEditorRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        emailEditorRef.current.saveDesign((design: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          emailEditorRef.current.exportHtml((data: any) => {
+            const { html } = data;
+            onSave(design, html);
+          });
+        });
+      } else {
+        console.error('Editor reference not available');
+        // Crear un diseño vacío para evitar errores
+        const emptyDesign: Design = {
+          body: {},
+          counters: {},
+          schemaVersion: 1
+        };
+        onSave(emptyDesign, '<p>No se pudo generar el HTML</p>');
+      }
+    } catch (error) {
+      console.error('Error al guardar el diseño:', error);
+      alert('Hubo un error al guardar el diseño. Por favor, intenta de nuevo.');
+    }
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onReady = (editor: any) => {
+    setIsLoaded(true);
+    emailEditorRef.current = editor;
+    const handleLoad = () => {
+      // Si hay un diseño inicial, cargarlo en el editor
+      if (initialDesign && emailEditorRef.current) {
+        emailEditorRef.current.loadDesign(initialDesign);
+      } else if (emailEditorRef.current) {
+        // Inicializar con un diseño vacío para evitar errores
+        emailEditorRef.current.loadDesign({
+          body: {
+            rows: [],
+            values: {}
+          },
+          counters: {},
+          schemaVersion: 1
+        });
+      }
+    };
+    handleLoad();
+  };
+
+  return (
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      width: '100%', 
+      height: '100%', 
+      backgroundColor: 'rgba(0,0,0,0.8)', 
+      zIndex: 1000,
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {/* Barra superior con título */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '10px 20px',
+        backgroundColor: '#fff',
+        borderBottom: '1px solid #ddd'
+      }}>
+        <h3 style={{ margin: 0 }}>Editor de Correo Electrónico</h3>
+      </div>
+      
+      {/* Barra flotante con botones siempre visible */}
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '0',
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        zIndex: 1500
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '15px 25px',
+          borderRadius: '10px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          display: 'flex',
+          gap: '15px'
+        }}>
+          <button 
+            onClick={onClose}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: 'transparent',
+              border: '2px solid #F21A2B',
+              color: '#F21A2B',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '16px'
+            }}
+          >
+            Cancelar
+          </button>
+          <button 
+            onClick={saveDesign}
+            style={{
+              padding: '10px 25px',
+              backgroundColor: '#F21A2B',
+              border: 'none',
+              color: 'white',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '16px'
+            }}
+          >
+            Guardar Diseño
+          </button>
+        </div>
+      </div>
+      <div style={{ flex: 1, position: 'relative' }}>
+        {!isLoaded && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#f8f9fa'
+          }}>
+            <p>Cargando editor...</p>
+          </div>
+        )}
+        <EmailEditor
+          ref={emailEditorRef}
+          onReady={onReady}
+          minHeight="100%"
+          options={{
+            customCSS: [
+              `body { font-family: Arial, sans-serif; }`,
+            ],
+            features: {
+              colorPicker: {
+                presets: ['#F21A2B', '#282A5B', '#ffffff', '#000000', '#f8f9fa', '#6c757d']
+              }
+            },
+            appearance: {
+              theme: 'light',
+              panels: {
+                tools: {
+                  dock: 'left'
+                }
+              }
+            },
+            tools: {
+              heading: {
+                properties: {
+                  color: {
+                    value: '#282A5B'
+                  }
+                }
+              },
+              button: {
+                properties: {
+                  color: {
+                    value: '#F21A2B'
+                  }
+                }
+              }
+            },
+            translations: {
+              'es-ES': {
+                'editor.heading': 'Encabezado',
+                'editor.text': 'Texto',
+                'editor.button': 'Botón',
+                'editor.image': 'Imagen',
+                'editor.divider': 'Divisor',
+                'editor.columns': 'Columnas',
+                'editor.social': 'Social',
+                'editor.html': 'HTML',
+                'editor.save': 'Guardar',
+                'editor.cancel': 'Cancelar'
+              }
+            },
+            locale: 'es-ES'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default EmailEditorComponent;

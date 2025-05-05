@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Footer from './components/Footer/Footer';
+import UserInitializer from './components/UserInitializer';
 
 function App() {
   const location = useLocation();
@@ -12,6 +13,9 @@ function App() {
   
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Componente para inicializar datos de usuario */}
+      <UserInitializer />
+      
       <div className="flex-grow">
         <Routes>
           <Route path="/" element={<LandingPage />} />

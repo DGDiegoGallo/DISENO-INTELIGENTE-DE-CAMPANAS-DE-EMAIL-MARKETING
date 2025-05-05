@@ -10,7 +10,8 @@ import {
   FaLightbulb, 
   FaSmile, 
   FaUserFriends, 
-  FaHeadset
+  FaHeadset,
+  FaSignOutAlt
 } from 'react-icons/fa';
 
 // Definir la interfaz para las props
@@ -28,7 +29,9 @@ const sidebarStyle = {
   position: 'fixed' as const,
   left: 0,
   top: 0,
-  zIndex: 1000
+  zIndex: 1000,
+  display: 'flex',
+  flexDirection: 'column' as const
 };
 
 // Estilo para los elementos de navegación
@@ -53,7 +56,7 @@ const iconStyle = {
 
 // Restaurar y definir el estilo activo como constante
 const activeNavItemStyle = {
-  backgroundColor: '#e5322d',
+  backgroundColor: '#F21A2B',
   color: 'white'
 };
 
@@ -70,7 +73,17 @@ const twoLineTextStyle = {
 
 // Estilo para el contenedor de navegación
 const navContainerStyle = {
-  marginTop: '50px' // Espacio para la navbar
+  marginTop: '50px', // Espacio para la navbar
+  flex: 1, // Tomar el espacio disponible
+  overflowY: 'auto' as const // Permitir scroll si hay muchos items
+};
+
+// Estilo para el botón de logout
+const logoutButtonStyle = {
+  ...navItemStyle,
+  marginTop: 'auto',
+  borderTop: '1px solid #e9e9e9',
+  backgroundColor: '#f8f8f8'
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
@@ -78,6 +91,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
   const handleNavClick = (viewName: string, e: React.MouseEvent) => {
     e.preventDefault(); // Prevenir la navegación por defecto si usamos <a>
     onNavigate(viewName);
+  };
+  
+  // Función para manejar el logout
+  const handleLogout = () => {
+    // Aquí iría la lógica para cerrar sesión
+    // Por ejemplo, redirigir a la página de login
+    window.location.href = '/login';
   };
   
   return (
@@ -175,6 +195,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
         >
           <FaHeadset style={{...iconStyle, ...(activeView === 'Soporte' ? activeIconStyle : {})}} /> Soporte
         </div>
+      </div>
+      
+      {/* Botón de logout */}
+      <div 
+        style={logoutButtonStyle}
+        onClick={handleLogout}
+      >
+        <FaSignOutAlt style={iconStyle} /> Cerrar sesión
       </div>
     </div>
   );
