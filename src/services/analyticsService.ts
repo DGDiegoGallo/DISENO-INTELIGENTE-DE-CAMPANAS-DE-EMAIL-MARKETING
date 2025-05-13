@@ -1,51 +1,5 @@
-import strapiService, { StrapiResponse } from './strapiService';
-
-// Interfaces para análisis y métricas
-export interface CampaignMetrics {
-  campaignId: number;
-  campaignTitle: string;
-  sentCount: number;
-  openCount: number;
-  clickCount: number;
-  bounceCount: number;
-  unsubscribeCount: number;
-  openRate: number;
-  clickRate: number;
-  bounceRate: number;
-  unsubscribeRate: number;
-  date: string;
-}
-
-export interface TimeSeriesData {
-  date: string;
-  value: number;
-  label: string;
-}
-
-export interface PerformanceMetrics {
-  openRates: TimeSeriesData[];
-  clickRates: TimeSeriesData[];
-  bounceRates: TimeSeriesData[];
-  unsubscribeRates: TimeSeriesData[];
-}
-
-export interface DeviceBreakdown {
-  desktop: number;
-  mobile: number;
-  tablet: number;
-}
-
-export interface GeographicData {
-  country: string;
-  count: number;
-  percentage: number;
-}
-
-export interface TimeOfDayData {
-  hour: number;
-  openCount: number;
-  clickCount: number;
-}
+// Importar interfaces desde la carpeta de interfaces
+import { CampaignMetrics, TimeSeriesData, PerformanceMetrics, DeviceBreakdown, GeographicData, TimeOfDayData } from '../interfaces/analytics';
 
 // Servicio para análisis y métricas
 const analyticsService = {
@@ -54,9 +8,9 @@ const analyticsService = {
    * @param startDate - Fecha de inicio para filtrar
    * @param endDate - Fecha de fin para filtrar
    */
-  getOverallMetrics: async (startDate?: string, endDate?: string): Promise<any> => {
+  getOverallMetrics: async (startDate?: string, endDate?: string): Promise<Record<string, unknown>> => {
     try {
-      const params: any = {};
+      const params: Record<string, string> = {};
       
       if (startDate) {
         params.startDate = startDate;
@@ -68,7 +22,7 @@ const analyticsService = {
       
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/overall?${new URLSearchParams(params)}`,
+        `http://34.238.122.213:1337/api/analytics/overall?${new URLSearchParams(params)}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -91,7 +45,7 @@ const analyticsService = {
     try {
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/campaign/${campaignId}`,
+        `http://34.238.122.213:1337/api/analytics/campaign/${campaignId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -129,7 +83,7 @@ const analyticsService = {
       
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/performance-over-time?${new URLSearchParams(params)}`,
+        `http://34.238.122.213:1337/api/analytics/performance-over-time?${new URLSearchParams(params)}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -164,7 +118,7 @@ const analyticsService = {
       
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/all-performance-metrics?${new URLSearchParams(params)}`,
+        `http://34.238.122.213:1337/api/analytics/all-performance-metrics?${new URLSearchParams(params)}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -185,15 +139,15 @@ const analyticsService = {
    */
   getDeviceBreakdown: async (campaignId?: number): Promise<DeviceBreakdown> => {
     try {
-      const params: any = {};
+      const params: Record<string, string> = {};
       
       if (campaignId) {
-        params.campaignId = campaignId;
+        params.campaignId = campaignId.toString();
       }
       
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/device-breakdown?${new URLSearchParams(params)}`,
+        `http://34.238.122.213:1337/api/analytics/device-breakdown?${new URLSearchParams(params)}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -215,17 +169,20 @@ const analyticsService = {
    */
   getGeographicData: async (campaignId?: number, limit = 10): Promise<GeographicData[]> => {
     try {
-      const params: any = {
-        limit
-      };
+      // Convertir los parámetros a un formato que URLSearchParams pueda manejar
+      const queryParams = new URLSearchParams();
       
+      // Agregar el límite
+      queryParams.append('limit', limit.toString());
+      
+      // Agregar el ID de campaña si existe
       if (campaignId) {
-        params.campaignId = campaignId;
+        queryParams.append('campaignId', campaignId.toString());
       }
       
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/geographic-data?${new URLSearchParams(params)}`,
+        `http://34.238.122.213:1337/api/analytics/geographic-data?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -246,15 +203,15 @@ const analyticsService = {
    */
   getTimeOfDayData: async (campaignId?: number): Promise<TimeOfDayData[]> => {
     try {
-      const params: any = {};
+      const params: Record<string, string> = {};
       
       if (campaignId) {
-        params.campaignId = campaignId;
+        params.campaignId = campaignId.toString();
       }
       
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/time-of-day?${new URLSearchParams(params)}`,
+        `http://34.238.122.213:1337/api/analytics/time-of-day?${new URLSearchParams(params)}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -273,17 +230,17 @@ const analyticsService = {
    * Obtiene análisis de sentimiento basado en respuestas y feedback
    * @param campaignId - ID de la campaña (opcional, si no se proporciona devuelve datos generales)
    */
-  getSentimentAnalysis: async (campaignId?: number): Promise<any> => {
+  getSentimentAnalysis: async (campaignId?: number): Promise<Record<string, unknown>> => {
     try {
-      const params: any = {};
+      const params: Record<string, string> = {};
       
       if (campaignId) {
-        params.campaignId = campaignId;
+        params.campaignId = campaignId.toString();
       }
       
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/sentiment?${new URLSearchParams(params)}`,
+        `http://34.238.122.213:1337/api/analytics/sentiment?${new URLSearchParams(params)}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -301,11 +258,11 @@ const analyticsService = {
   /**
    * Obtiene recomendaciones basadas en datos históricos
    */
-  getRecommendations: async (): Promise<any> => {
+  getRecommendations: async (): Promise<Record<string, unknown>> => {
     try {
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/recommendations`,
+        `http://34.238.122.213:1337/api/analytics/recommendations`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -324,11 +281,11 @@ const analyticsService = {
    * Obtiene datos para pruebas A/B
    * @param testId - ID de la prueba A/B
    */
-  getABTestResults: async (testId: number): Promise<any> => {
+  getABTestResults: async (testId: number): Promise<Record<string, unknown>> => {
     try {
       // Suponiendo que tienes un endpoint personalizado en Strapi para esto
       const response = await fetch(
-        `${strapiService.API_URL}/api/analytics/ab-test/${testId}`,
+        `http://34.238.122.213:1337/api/analytics/ab-test/${testId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`

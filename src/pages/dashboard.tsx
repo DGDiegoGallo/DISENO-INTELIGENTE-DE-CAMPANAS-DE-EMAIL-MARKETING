@@ -17,6 +17,7 @@ import TrainingView from '../components/views/TrainingView'; // Importar la vist
 import RecommendationView from '../components/views/RecommendationView'; // Importar la nueva vista de Recomendación
 import SentimentAnalysisView from '../components/views/SentimentAnalysisView'; // Importar la nueva vista de Análisis de sentimiento
 import SegmentationView from '../components/views/SegmentationView'; // Importar la nueva vista de Segmentación de campañas
+import EmailVerificationView from '../components/views/EmailVerificationView'; // Importar la nueva vista de Verificación por correo
 
 // Importar Layout
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -181,6 +182,8 @@ function Dashboard() {
         return <SegmentationView />;
       case 'Soporte': 
         return <SupportView />;
+      case 'VerificacionEmail':
+        return <EmailVerificationView />;
       default:
         return <div>Vista no encontrada</div>;
     }

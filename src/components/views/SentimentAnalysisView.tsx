@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { Chart, BarController, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, TooltipItem } from 'chart.js';
+import { Chart, BarController, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, TooltipItem, ChartOptions } from 'chart.js';
 
 // Registrar los componentes de Chart.js que necesitamos
 Chart.register(BarController, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -59,7 +59,7 @@ const SentimentAnalysisView: React.FC = () => {
         }
       }
     }
-  }), []) as any; // Usar type assertion para simplificar - en producción sería mejor definir tipos exactos
+  }), []) as ChartOptions<'bar'>; // Usar type assertion con tipo correcto
 
   useEffect(() => {
     // Destruir gráficos anteriores si existen

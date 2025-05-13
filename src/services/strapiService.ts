@@ -14,31 +14,8 @@ const getAuthConfig = () => {
   };
 };
 
-// Interfaces para los tipos de datos
-export interface StrapiResponse<T> {
-  data: StrapiData<T>[];
-  meta: {
-    pagination: {
-      page: number;
-      pageSize: number;
-      pageCount: number;
-      total: number;
-    };
-  };
-}
-
-export interface StrapiData<T> {
-  id: number;
-  attributes: T;
-}
-
-export interface StrapiSingleResponse<T> {
-  data: {
-    id: number;
-    attributes: T;
-  };
-  meta: Record<string, unknown>;
-}
+// Importar interfaces desde la carpeta de interfaces
+import { StrapiResponse, StrapiSingleResponse } from '../interfaces/strapi';
 
 // Servicio para interactuar con Strapi
 const strapiService = {

@@ -1,19 +1,42 @@
-import strapiService, { StrapiResponse, StrapiSingleResponse } from './strapiService';
+import strapiService from './strapiService';
+import { StrapiResponse, StrapiSingleResponse } from '../interfaces/strapi';
+
+// Tipo para campos Rich Text en Strapi v5
+type StrapiRichTextBlock = {
+  type: string;
+  children: Array<{
+    type: string;
+    text: string;
+  }>;
+};
 
 // Interfaces para las campañas de email adaptadas a la estructura de Proyecto_56
 export interface Campaign {
   id?: number;
   nombre: string;           // Título de la campaña
-  fechas?: string;         // Fecha de creación/programación
+  Fechas?: string;         // Fecha de creación/programación (nota: F mayúscula)
   estado: 'borrador' | 'programado' | 'enviado' | 'cancelado';
   usuario?: number;        // ID del usuario que creó la campaña (relación con User)
   asunto: string;          // Asunto del correo
-  contenidoHTML: string;   // HTML del correo
-  disenoJSON: string | Record<string, unknown>;  // Diseño del correo en formato JSON o string
+  contenidoHTML?: string | StrapiRichTextBlock[] | null;   // HTML del correo (formato Rich Text para Strapi v5)
+  campanaJSON?: string | Record<string, unknown>; // Diseño del correo en formato JSON o string
   contactos?: string;      // Grupo de contactos (ahora como texto simple)
+  gruposdecontactosJSON?: Record<string, unknown>; // Grupos de contactos en formato JSON
+  interaccion_destinatario?: Record<string, unknown>; // Información de interacción de destinatarios
+  se_registro_en_pagina?: boolean | null; // Si el destinatario se registró en la página
+  dinero_gastado?: string | null; // Dinero gastado por el destinatario
+  email_destinatario?: Record<string, unknown> | null; // Información del email del destinatario
   createdAt?: string;
   updatedAt?: string;
   publishedAt?: string;
+}
+
+// Interfaz extendida para manejar datos adicionales del componente
+interface ExtendedCampaignData extends Partial<Campaign> {
+  title?: string;          // Nombre de la campaña en el componente
+  subject?: string;        // Asunto del correo en el componente
+  emailDesign?: Record<string, unknown>; // Diseño del correo desde el editor
+  emailHtml?: string;      // HTML generado por el editor
 }
 
 export interface CampaignStats {
@@ -97,7 +120,7 @@ const campaignService = {
    * Crea una nueva campaña
    * @param campaignData - Datos de la campaña
    */
-  createCampaign: async (campaignData: Partial<Campaign>): Promise<StrapiSingleResponse<Campaign>> => {
+  createCampaign: async (campaignData: ExtendedCampaignData): Promise<StrapiSingleResponse<Campaign>> => {
     try {
       // Obtener el ID del usuario actual desde localStorage (si está disponible)
       let userId: number | undefined;
@@ -111,17 +134,55 @@ const campaignService = {
         console.warn('No se pudo obtener el ID del usuario desde localStorage:', e);
       }
       
-      // Adaptar los datos para Strapi v5
-      const strapiData = {
-        nombre: campaignData.nombre,
-        Fechas: new Date().toISOString(), // Usar formato ISO para fechas
-        estado: campaignData.estado,
-        asunto: campaignData.asunto,
-        contenidoHTML: campaignData.contenidoHTML,
-        disenoJSON: campaignData.disenoJSON,
-        contactos: typeof campaignData.contactos === 'string' 
-          ? campaignData.contactos 
-          : JSON.stringify(campaignData.contactos),
+      // Crear estructura para enviar a Strapi
+      const strapiData: Partial<Campaign> = {
+        // Si los datos vienen del componente, usar title/subject, sino usar nombre/asunto
+        nombre: campaignData.title || campaignData.nombre || '',
+        Fechas: campaignData.Fechas || new Date().toISOString(),
+        estado: campaignData.estado || 'borrador',
+        asunto: campaignData.subject || campaignData.asunto || '',
+        
+        // Formatear el contenido HTML para Strapi v5 Rich text (Blocks)
+        // En lugar de enviar el HTML como texto plano, lo formateamos como JSON
+        contenidoHTML: (() => {
+          const htmlContent = typeof campaignData.emailHtml === 'string' 
+            ? campaignData.emailHtml 
+            : typeof campaignData.contenidoHTML === 'string'
+              ? campaignData.contenidoHTML
+              : '';
+            
+          if (!htmlContent) return null;
+            
+          // Para Strapi Rich text blocks el formato correcto es un objeto
+          // que simula los bloques y no un string plano de HTML
+          return [{
+            type: 'paragraph',
+            children: [{
+              type: 'text',
+              text: htmlContent
+            }]
+          }];
+        })(),
+        
+        // Si contactos ya es un string, usarlo directamente
+        contactos: typeof campaignData.contactos === 'string'
+          ? campaignData.contactos
+          : campaignData.contactos ? JSON.stringify(campaignData.contactos) : '',
+        
+        // Guardar el diseño del email en campanaJSON (el campo correcto)
+        campanaJSON: campaignData.emailDesign 
+          ? JSON.stringify(campaignData.emailDesign) 
+          : campaignData.campanaJSON || undefined,
+        
+        // Guardar grupos de contactos
+        gruposdecontactosJSON: campaignData.gruposdecontactosJSON || undefined,
+        
+        // Guardar interacción de destinatarios
+        interaccion_destinatario: campaignData.interaccion_destinatario || undefined,
+        
+        // Eliminar campos duplicados que no deben enviarse individualmente
+        // ya que están dentro de interaccion_destinatario
+        
         // Incluir el ID del usuario si está disponible
         usuario: userId || campaignData.usuario
       };

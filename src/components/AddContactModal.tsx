@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import ModalWrapper from './ModalWrapper';
+import { FaPlus } from 'react-icons/fa';
+import CreateGroupModal from './CreateGroupModal';
 
 interface AddContactModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (name: string, email: string, group: string) => void;
+  onSubmit: (name: string, email: string, phone: string, group: string) => void;
+  groups: string[];
+  onAddGroup: (groupName: string) => void;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -34,19 +38,48 @@ const buttonStyle: React.CSSProperties = {
   margin: '0 5px',
 };
 
-const AddContactModal: React.FC<AddContactModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const AddContactModal: React.FC<AddContactModalProps> = ({ isOpen, onClose, onSubmit, groups, onAddGroup }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [group, setGroup] = useState(''); // Puedes inicializar con un valor por defecto si es necesario
+  const [phone, setPhone] = useState('');
+  const [group, setGroup] = useState('');
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 
   const handleSubmit = () => {
-    // Aquí puedes añadir validación si es necesario
-    onSubmit(name, email, group);
-    // Limpiar campos y cerrar (opcional, depende de si onSubmit cierra)
-    // setName('');
-    // setEmail('');
-    // setGroup(''); 
-    // onClose(); 
+    if (!name.trim()) {
+      alert('Por favor, ingresa un nombre');
+      return;
+    }
+    if (!email.trim()) {
+      alert('Por favor, ingresa un correo electrónico');
+      return;
+    }
+    if (!phone.trim()) {
+      alert('Por favor, ingresa un número de teléfono');
+      return;
+    }
+    if (!group.trim()) {
+      alert('Por favor, selecciona un grupo');
+      return;
+    }
+    
+    // Enviamos los datos del nuevo contacto
+    onSubmit(name, email, phone, group);
+    
+    // Limpiamos los campos
+    setName('');
+    setEmail('');
+    setPhone('');
+    setGroup('');
+  };
+  
+  // Maneja la creación de un nuevo grupo desde el modal
+  const handleAddGroup = (newGroupName: string) => {
+    // Añadir el nuevo grupo a la lista
+    onAddGroup(newGroupName);
+    
+    // Seleccionar automáticamente el nuevo grupo
+    setGroup(newGroupName);
   };
 
   return (
@@ -73,33 +106,73 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ isOpen, onClose, onSu
         />
       </div>
       <div>
-        <label style={labelStyle}>Grupo</label>
-        <select 
+        <label style={labelStyle}>Teléfono</label>
+        <input 
+          type="tel" 
+          placeholder="+1 000 000 00 00" 
           style={inputStyle} 
-          value={group}
-          onChange={(e) => setGroup(e.target.value)}
-        >
-          <option value="">Seleccionar</option>
-          {/* Cargar opciones de grupo dinámicamente si es necesario */}
-          <option value="Grupo 1">Grupo 1</option>
-          <option value="Grupo 2">Grupo 2</option>
-          <option value="Grupo 3">Grupo 3</option>
-        </select>
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)} 
+        />
+      </div>
+
+      <div>
+        <label style={labelStyle}>Grupo</label>
+        <div>
+          <select 
+            style={inputStyle} 
+            value={group}
+            onChange={(e) => setGroup(e.target.value)}
+          >
+            <option value="">Seleccionar grupo</option>
+            {groups.map((groupName, index) => (
+              <option key={index} value={groupName}>{groupName}</option>
+            ))}
+          </select>
+          
+          <button 
+            style={{
+              display: 'block',
+              marginTop: '5px',
+              background: 'transparent',
+              border: 'none',
+              color: '#F21A2B',
+              cursor: 'pointer',
+              fontSize: '13px',
+              padding: '0',
+              textAlign: 'left' as const
+            }}
+            onClick={() => setShowCreateGroupModal(true)}
+            type="button"
+          >
+            <FaPlus style={{ marginRight: '5px', fontSize: '10px' }} /> Añadir más grupos
+          </button>
+        </div>
       </div>
       <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'center' }}>
         <button 
           style={{...buttonStyle, backgroundColor: 'transparent', border: '1px solid #F21A2B', color: '#F21A2B'}} 
           onClick={onClose}
+          type="button"
         >
           Cancelar
         </button>
         <button 
           style={{...buttonStyle, backgroundColor: '#F21A2B', color: 'white'}} 
           onClick={handleSubmit}
+          type="button"
         >
           Aceptar
         </button>
       </div>
+      
+      {/* Modal para crear grupos */}
+      <CreateGroupModal
+        isOpen={showCreateGroupModal}
+        onClose={() => setShowCreateGroupModal(false)}
+        onAddGroup={handleAddGroup}
+        existingGroups={groups}
+      />
     </ModalWrapper>
   );
 };

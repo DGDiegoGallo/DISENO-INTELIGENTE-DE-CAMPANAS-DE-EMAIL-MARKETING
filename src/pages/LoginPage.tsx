@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar/Navbar';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { useAuthStore } from '../store';
+import useUserStore from '../store/useUserStore';
+import axios from 'axios';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Usar la tienda Zustand para autenticación
-  const { login, isLoading, error, isAuthenticated, clearError } = useAuthStore();
+  // Usar el store unificado para autenticación
+  const { login, isAuthenticated } = useUserStore();
   const navigate = useNavigate();
   
   // Efecto para cargar email recordado
@@ -32,20 +35,40 @@ const LoginPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError(); // Limpiar errores previos
+    setError(null); // Limpiar errores previos
+    setIsLoading(true);
     
     try {
-      // Llamar al servicio de autenticación desde Zustand
-      await login({
+      // Realizar la llamada a la API de Strapi directamente
+      const response = await axios.post('http://34.238.122.213:1337/api/auth/local', {
         identifier: email, // Strapi acepta email como identifier
         password: password
       });
       
-      // La redirección se maneja en el useEffect
+      // Si el login es exitoso, actualizar el store de Zustand usando el store unificado
+      if (response.data?.jwt && response.data?.user) {
+        login({
+          user: response.data.user,
+          token: response.data.jwt
+        });
+        
+        // La redirección se maneja en el useEffect
+      }
     } catch (error) {
-      // Los errores se manejan en la tienda Zustand
+      // Manejar errores
+      let errorMessage = 'Error al iniciar sesión';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (axios.isAxiosError(error) && error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      }
+      
+      setError(errorMessage);
       console.error('Error al iniciar sesión:', error);
     } finally {
+      setIsLoading(false);
+      
       // Si rememberMe está activado, guardar email en localStorage
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', email);

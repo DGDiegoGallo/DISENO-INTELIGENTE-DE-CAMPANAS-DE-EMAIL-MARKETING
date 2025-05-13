@@ -1,19 +1,13 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { FaUserCircle } from 'react-icons/fa'; // Icono de usuario de ejemplo
 import logoImage from '../../assets/images/Horiz.Preferente.png'; // Importar la imagen del logo
 import useUserStore from '../../store/useUserStore'; // Importar el store de Zustand
 
 const Navbar: React.FC = () => {
   // Obtener datos del usuario desde el store de Zustand
-  const { user, isAuthenticated, initializeFromLocalStorage } = useUserStore();
-
-  // Inicializar datos del usuario desde localStorage al cargar el componente
-  useEffect(() => {
-    // Inicializar el store con los datos de localStorage si no está autenticado
-    if (!isAuthenticated) {
-      initializeFromLocalStorage();
-    }
-  }, [isAuthenticated, initializeFromLocalStorage]);
+  const { user } = useUserStore();
+  
+  // Ya no necesitamos inicializar manualmente, Zustand persist lo hace automáticamente
 
   // Estilos para el componente de usuario
   const userContainerStyle: React.CSSProperties = {

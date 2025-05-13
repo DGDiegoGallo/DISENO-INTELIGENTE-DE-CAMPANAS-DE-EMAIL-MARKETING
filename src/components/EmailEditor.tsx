@@ -1,22 +1,6 @@
 import React, { useRef, useState } from 'react';
 import EmailEditor from 'react-email-editor';
-
-// Definir una interfaz simple para el diseño
-export interface Design extends Record<string, unknown> {
-  body: {
-    rows: Array<Record<string, unknown>>;
-    values: Record<string, unknown>;
-  };
-  counters: Record<string, unknown>;
-  schemaVersion: number;
-}
-
-// Usamos un tipo más específico para la referencia del editor
-type EditorInstance = {
-  saveDesign: (callback: (design: Design) => void) => void;
-  exportHtml: (callback: (data: { html: string }) => void) => void;
-  loadDesign: (design: Design) => void;
-};
+import { Design } from '../interfaces/emailEditor';
 
 interface EmailEditorComponentProps {
   onSave: (design: Design, html: string) => void;
@@ -29,6 +13,8 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
   onClose,
   initialDesign 
 }) => {
+  // Desactivamos las reglas de eslint para permitir el uso de any en este componente
+  // ya que la biblioteca react-email-editor no proporciona tipos adecuados
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const emailEditorRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -41,14 +27,18 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           emailEditorRef.current.exportHtml((data: any) => {
             const { html } = data;
-            onSave(design, html);
+            // Hacemos un cast seguro a Design
+            onSave(design as Design, html);
           });
         });
       } else {
         console.error('Editor reference not available');
         // Crear un diseño vacío para evitar errores
         const emptyDesign: Design = {
-          body: {},
+          body: {
+            rows: [],
+            values: {}
+          },
           counters: {},
           schemaVersion: 1
         };
@@ -64,23 +54,21 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
   const onReady = (editor: any) => {
     setIsLoaded(true);
     emailEditorRef.current = editor;
-    const handleLoad = () => {
-      // Si hay un diseño inicial, cargarlo en el editor
-      if (initialDesign && emailEditorRef.current) {
-        emailEditorRef.current.loadDesign(initialDesign);
-      } else if (emailEditorRef.current) {
-        // Inicializar con un diseño vacío para evitar errores
-        emailEditorRef.current.loadDesign({
-          body: {
-            rows: [],
-            values: {}
-          },
-          counters: {},
-          schemaVersion: 1
-        });
-      }
-    };
-    handleLoad();
+    
+    // Si hay un diseño inicial, cargarlo en el editor
+    if (initialDesign && emailEditorRef.current) {
+      emailEditorRef.current.loadDesign(initialDesign);
+    } else if (emailEditorRef.current) {
+      // Inicializar con un diseño vacío para evitar errores
+      emailEditorRef.current.loadDesign({
+        body: {
+          rows: [],
+          values: {}
+        },
+        counters: {},
+        schemaVersion: 1
+      });
+    }
   };
 
   return (

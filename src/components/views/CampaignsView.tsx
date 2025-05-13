@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaEdit, FaTrash, FaEye, FaSpinner, FaSync } from 'react-icons/fa';
 import campaignService from '../../services/campaignService';
+import { extractStrapiData } from '../../interfaces/strapi';
 
 interface Campaign {
   id: number;
@@ -9,8 +10,8 @@ interface Campaign {
   subject: string;
   contactGroup: string;
   scheduledTime: string;
-  emailDesign?: Record<string, unknown>; // Diseño del email
-  emailHtml?: string; // HTML generado
+  emailDesign?: Record<string, unknown> | string; // Diseño del email
+  emailHtml?: string | null; // HTML generado, puede ser null si no hay contenido
 }
 
 // Añadir la prop onShowCreate a la interfaz
@@ -23,7 +24,7 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
   const [showPreview, setShowPreview] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [useLocalStorage, setUseLocalStorage] = useState(true); // Usar localStorage por defecto hasta que Strapi esté configurado
+  const [useLocalStorage, setUseLocalStorage] = useState(false); // Cargar desde Strapi por defecto
 
   // Función para cargar datos de ejemplo o desde localStorage
   const loadFromLocalStorage = useCallback(() => {
@@ -97,18 +98,48 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
       // Obtener campañas desde Strapi
       const response = await campaignService.getAllCampaigns(1, 50);
       
+      // Verificar la estructura real de los datos para depuración
+      console.log('Estructura completa de la respuesta:', response);
+      
       // Mapear los datos de Strapi al formato de la interfaz Campaign
-      const strapiCampaigns = response.data.map(item => {
-        const campaign = item.attributes;
+      // Usar extractStrapiData para obtener los datos independientemente de si están aplanados o en attributes
+      const strapiCampaigns = response.data.map((item) => {
+        // Extraer los datos usando nuestra función auxiliar
+        const campaignData = extractStrapiData(item);
+        console.log('Datos extraídos:', campaignData);
+        
         return {
-          id: item.id,
-          fecha: new Date(campaign.fechas || campaign.createdAt || '').toLocaleDateString(),
-          title: campaign.nombre,
-          subject: campaign.asunto,
-          contactGroup: campaign.contactos || '',
-          scheduledTime: campaign.fechas || '',
-          emailHtml: campaign.contenidoHTML,
-          emailDesign: campaign.disenoJSON
+          id: campaignData.id,
+          fecha: new Date(campaignData.Fechas || campaignData.createdAt || '').toLocaleDateString(),
+          title: campaignData.nombre,
+          subject: campaignData.asunto,
+          contactGroup: campaignData.contactos || '',
+          scheduledTime: campaignData.Fechas || '',
+          // Procesar el contenido HTML que puede venir en formato Rich Text de Strapi
+          emailHtml: (() => {
+            const content = campaignData.contenidoHTML;
+            // Si el contenido es null o undefined
+            if (!content) return null;
+            // Si el contenido es un string, devolverlo directamente
+            if (typeof content === 'string') return content;
+            // Si el contenido es un array (formato Rich Text de Strapi)
+            if (Array.isArray(content)) {
+              try {
+                // Extraer el texto de los bloques
+                return content.map(block => {
+                  if (block.children && Array.isArray(block.children)) {
+                    return block.children.map(child => child.text || '').join(' ');
+                  }
+                  return '';
+                }).join('\n');
+              } catch (e) {
+                console.error('Error al procesar el Rich Text:', e);
+                return null;
+              }
+            }
+            return null;
+          })(),
+          emailDesign: campaignData.campanaJSON
         };
       });
       

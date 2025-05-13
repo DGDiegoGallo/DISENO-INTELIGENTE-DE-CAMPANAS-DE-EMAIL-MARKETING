@@ -1,45 +1,6 @@
-import strapiService, { StrapiResponse, StrapiSingleResponse } from './strapiService';
-
-// Interfaces para los contactos
-export interface Contact {
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  company?: string;
-  position?: string;
-  status: 'active' | 'unsubscribed' | 'bounced';
-  tags?: string[];
-  customFields?: Record<string, any>;
-  lastContactedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
-}
-
-export interface Segment {
-  name: string;
-  description?: string;
-  criteria: SegmentCriteria[];
-  contactCount?: number;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string;
-}
-
-export interface SegmentCriteria {
-  field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with' | 'greater_than' | 'less_than';
-  value: string | number | boolean;
-}
-
-export interface ContactFilters {
-  email?: string;
-  status?: 'active' | 'unsubscribed' | 'bounced';
-  tags?: string[];
-  startDate?: string;
-  endDate?: string;
-}
+import strapiService from './strapiService';
+import { StrapiResponse, StrapiSingleResponse } from '../interfaces/strapi';
+import { Contact, Segment, ContactFilters } from '../interfaces/contacts';
 
 // Servicio para manejar contactos y segmentos
 const contactService = {
@@ -56,7 +17,7 @@ const contactService = {
   ): Promise<StrapiResponse<Contact>> => {
     try {
       // Construir filtros para Strapi
-      const strapiFilters: any = {};
+      const strapiFilters: Record<string, unknown> = {};
       
       if (filters?.email) {
         strapiFilters.email = {
@@ -77,15 +38,17 @@ const contactService = {
       }
       
       if (filters?.startDate || filters?.endDate) {
-        strapiFilters.createdAt = {};
+        const createdAtFilter: Record<string, string> = {};
         
         if (filters.startDate) {
-          strapiFilters.createdAt.$gte = filters.startDate;
+          createdAtFilter.$gte = filters.startDate;
         }
         
         if (filters.endDate) {
-          strapiFilters.createdAt.$lte = filters.endDate;
+          createdAtFilter.$lte = filters.endDate;
         }
+        
+        strapiFilters.createdAt = createdAtFilter;
       }
       
       return await strapiService.query<Contact>(
@@ -163,21 +126,24 @@ const contactService = {
    * Importa contactos desde un archivo CSV
    * @param file - Archivo CSV con contactos
    */
-  importContacts: async (file: File): Promise<any> => {
+  importContacts: async (file: File): Promise<Record<string, unknown>> => {
     try {
       // Primero subimos el archivo
       const uploadResult = await strapiService.uploadFile(file);
       
       // Luego llamamos a un endpoint personalizado para procesar el archivo
       // Esto dependerá de cómo hayas configurado Strapi
-      const response = await fetch(`${strapiService.API_URL}/api/contacts/import`, {
+      const response = await fetch(`http://34.238.122.213:1337/api/contacts/import`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          fileId: uploadResult[0].id
+          // Usamos acceso seguro a propiedades con operador opcional
+          fileId: uploadResult && typeof uploadResult === 'object' && Array.isArray(uploadResult) && 
+                 uploadResult.length > 0 && 'id' in uploadResult[0] ? 
+                 uploadResult[0].id : null
         })
       });
       
