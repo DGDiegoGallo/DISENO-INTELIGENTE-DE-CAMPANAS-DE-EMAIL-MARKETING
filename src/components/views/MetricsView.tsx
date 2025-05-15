@@ -2,21 +2,20 @@ import React, { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
 import Modal from 'react-modal';
 import { FaCheckCircle } from 'react-icons/fa';
+import LoadingSpinner from '../common/LoadingSpinner';
+import UserReportGenerator from '../UserReportGenerator';
 
 const MetricsView: React.FC = () => {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart | null>(null);
 
-  // --- Estados para los Modales ---
+  // --- Estados para los Modales y Carga ---
   const [isFormatModalOpen, setIsFormatModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // --- Funciones para manejar Modales ---
-  const openFormatModal = () => {
-    setSelectedFormat(''); // Reset format on open
-    setIsFormatModalOpen(true);
-  };
   const closeFormatModal = () => setIsFormatModalOpen(false);
 
   const handleExport = () => {
@@ -24,6 +23,9 @@ const MetricsView: React.FC = () => {
       alert('Por favor, selecciona un formato.'); // Simple validation
       return;
     }
+    
+    // Mostrar el estado de carga
+    setIsLoading(true);
     
     // --- Simulación de Descarga ---
     let blobContent = '';
@@ -58,9 +60,13 @@ const MetricsView: React.FC = () => {
     window.URL.revokeObjectURL(url);
     // --- Fin Simulación ---
 
-    // Cerrar modal de formato y abrir modal de éxito
-    closeFormatModal();
-    setIsSuccessModalOpen(true); 
+    // Simular tiempo de generación del informe
+    setTimeout(() => {
+      // Cerrar modal de formato y abrir modal de éxito
+      setIsLoading(false);
+      closeFormatModal();
+      setIsSuccessModalOpen(true);
+    }, 1500); // 1.5 segundos de simulación de generación del informe
   };
 
   const closeSuccessModal = () => setIsSuccessModalOpen(false);
@@ -88,16 +94,7 @@ const MetricsView: React.FC = () => {
     fontWeight: 'bold',
   };
 
-  const reportButtonStyle: React.CSSProperties = {
-    backgroundColor: '#F21A2B',
-    color: 'white',
-    border: 'none',
-    padding: '10px 20px',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    fontSize: '14px',
-  };
+
 
   const chartContainerStyle: React.CSSProperties = {
     backgroundColor: 'white',
@@ -288,10 +285,18 @@ const MetricsView: React.FC = () => {
     <div style={viewStyle}>
       <div style={headerStyle}>
         <h2 style={titleStyle}>Métricas de rendimiento</h2>
-        {/* Actualizar onClick del botón */}
-        <button style={reportButtonStyle} onClick={openFormatModal}>
-          Generar informe
-        </button>
+        <UserReportGenerator 
+          buttonLabel="Generar informe"
+          buttonVariant="danger"
+          onSuccess={() => {
+            console.log('Informe generado con éxito');
+            setIsSuccessModalOpen(true);
+          }}
+          onError={(error) => {
+            console.error('Error al generar informe:', error);
+            alert('Error al generar el informe. Por favor, inténtelo de nuevo.');
+          }}
+        />
       </div>
       <div style={chartContainerStyle}>
         <canvas ref={chartRef}></canvas>
@@ -321,8 +326,16 @@ const MetricsView: React.FC = () => {
           <option value="JPG">JPG</option>
         </select>
         <div style={modalButtonContainerStyle}>
-          <button style={modalSecondaryButtonStyle} onClick={closeFormatModal}>Cancelar</button>
-          <button style={modalPrimaryButtonStyle} onClick={handleExport}>Exportar</button>
+          <button style={modalSecondaryButtonStyle} onClick={closeFormatModal} disabled={isLoading}>Cancelar</button>
+          <button style={modalPrimaryButtonStyle} onClick={handleExport} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <LoadingSpinner size="small" color="white" /> Generando...
+              </>
+            ) : (
+              'Exportar'
+            )}
+          </button>
         </div>
       </Modal>
 

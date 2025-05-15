@@ -1,19 +1,22 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Dashboard from './pages/dashboard';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import NotFoundView from './components/views/NotFoundView';
 import Footer from './components/Footer/Footer';
 import UserInitializer from './components/UserInitializer';
 import ProtectedRoute from './components/ProtectedRoute';
+import GlobalLoadingProvider from './components/common/GlobalLoadingProvider';
 import { useEffect } from 'react';
 import useUserStore from './store/useUserStore';
 
 function App() {
   const location = useLocation();
   const showFooter = location.pathname === '/'; // Solo mostrar el footer en la landing page
-  const { isAuthenticated, logout } = useUserStore();
+  const { logout, checkAuth } = useUserStore();
+  const isAuthenticated = checkAuth(); // Verificar autenticación de forma activa
   
   // Verificar si se ha solicitado un cierre de sesión forzado
   useEffect(() => {
@@ -38,9 +41,14 @@ function App() {
       {/* Componente para inicializar datos de usuario */}
       <UserInitializer />
       
+      {/* Proveedor global de carga */}
+      <GlobalLoadingProvider />
+      
       <div className="flex-grow">
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
+          } />
           <Route path="/dashboard/*" element={
             <ProtectedRoute>
               <Dashboard />
@@ -48,6 +56,7 @@ function App() {
           } />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="*" element={<NotFoundView />} />
         </Routes>
       </div>
       {showFooter && <Footer />}

@@ -106,9 +106,9 @@ const campaignService = {
    */
   getCampaignById: async (id: number): Promise<StrapiSingleResponse<Campaign>> => {
     try {
-      // Usar 'usuario' (singular) para coincidir con el campo de relación actualizado
+      // Forma correcta de pasar el parámetro populate para Strapi v4+
       return await strapiService.getById<Campaign>('proyecto-56s', id, {
-        populate: 'usuario'
+        populate: '*'
       });
     } catch (error) {
       console.error(`Error al obtener campaña con ID ${id}:`, error);
@@ -312,6 +312,54 @@ const campaignService = {
       );
     } catch (error) {
       console.error('Error al obtener campañas más exitosas:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtiene todas las campañas del usuario actualmente logueado
+   * @param page - Número de página
+   * @param pageSize - Tamaño de página
+   * @param userId - ID del usuario logueado (si no se proporciona, se obtiene del store de autenticación)
+   */
+  getUserCampaigns: async (
+    page = 1,
+    pageSize = 10,
+    userId?: number
+  ): Promise<StrapiResponse<Campaign>> => {
+    try {
+      // Si no se proporciona userId, intentar obtenerlo del localStorage o del store de autenticación
+      if (!userId) {
+        // Intentar obtener del localStorage primero
+        const authData = localStorage.getItem('auth-storage');
+        if (authData) {
+          try {
+            const parsedData = JSON.parse(authData);
+            // Extraer el ID del usuario del objeto state.user.id
+            userId = parsedData?.state?.user?.id;
+          } catch (e) {
+            console.error('Error al analizar datos de autenticación:', e);
+          }
+        }
+
+        // Si aún no tenemos userId, lanzar error
+        if (!userId) {
+          throw new Error('No se pudo obtener el ID del usuario. Por favor, inicie sesión nuevamente.');
+        }
+      }
+
+      // Construir los parámetros de consulta para la paginación y filtrado por usuario
+      const queryParams: Record<string, string | number> = {
+        'pagination[page]': page,
+        'pagination[pageSize]': pageSize,
+        'populate': '*',
+        'filters[usuario][id]': userId
+      };
+
+      // Obtener las campañas filtradas por el usuario logueado
+      return await strapiService.getCollection<Campaign>('proyecto-56s', queryParams);
+    } catch (error) {
+      console.error('Error al obtener campañas del usuario:', error);
       throw error;
     }
   }

@@ -34,8 +34,13 @@ const authService = {
         credentials
       );
       
-      // Guardar token en localStorage
+      // Guardar token en localStorage (con ambos conjuntos de claves para compatibilidad)
       if (response.data.jwt) {
+        // Claves nuevas (alineadas con useUserStore)
+        localStorage.setItem('auth_token', response.data.jwt);
+        localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+        
+        // Claves antiguas (para compatibilidad con código existente)
         localStorage.setItem('token', response.data.jwt);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
@@ -49,8 +54,14 @@ const authService = {
   
   // Logout de usuario
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Limpiar claves de autenticación de forma exhaustiva
+    localStorage.removeItem('auth_token'); // Nueva clave
+    localStorage.removeItem('auth_user');  // Nueva clave
+    localStorage.removeItem('token');      // Clave antigua
+    localStorage.removeItem('user');       // Clave antigua
+    localStorage.removeItem('auth-storage'); // Zustand storage
+    
+    console.log('Servicio de autenticación: sesión cerrada correctamente');
   },
   
   // Obtener token actual
@@ -84,8 +95,13 @@ const authService = {
         userData
       );
       
-      // Guardar token en localStorage
+      // Guardar token en localStorage (con ambos conjuntos de claves para compatibilidad)
       if (response.data.jwt) {
+        // Claves nuevas (alineadas con useUserStore)
+        localStorage.setItem('auth_token', response.data.jwt);
+        localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+        
+        // Claves antiguas (para compatibilidad con código existente)
         localStorage.setItem('token', response.data.jwt);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }

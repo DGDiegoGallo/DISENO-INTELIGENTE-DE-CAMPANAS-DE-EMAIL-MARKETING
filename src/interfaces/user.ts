@@ -21,6 +21,9 @@ export interface StrapiUser {
   domicilio?: string;
   telefono?: string;
   avatar?: string;
+  // Rol de usuario que viene directamente en el campo rol
+  rol?: string;
+  // O también puede venir a través del objeto role
   role?: {
     id: number;
     name: string;

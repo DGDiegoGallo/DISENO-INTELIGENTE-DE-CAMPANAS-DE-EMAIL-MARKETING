@@ -9,21 +9,21 @@ import InicioView from '../components/views/InicioView';
 import CampaignsView from '../components/views/CampaignsView';
 import CreateCampaignView from '../components/views/CreateCampaignView';
 import ContactView from '../components/views/ContactView';
-import CrmDataView from '../components/views/ABTestingView'; // Importar CrmDataView desde el archivo ABTestingView.tsx
-import ABTestingListView from '../components/views/ABTestingListView'; // Importar la nueva vista de lista para Pruebas A/B
-import CreateABTestView from '../components/views/CreateABTestView'; // Importar la nueva vista de creación
-import MetricsView from '../components/views/MetricsView'; // Importar la vista real de Métricas
+import MetricsView from '../components/views/MetricsView';
 import TrainingView from '../components/views/TrainingView'; // Importar la vista real de Capacitación
 import RecommendationView from '../components/views/RecommendationView'; // Importar la nueva vista de Recomendación
-import SentimentAnalysisView from '../components/views/SentimentAnalysisView'; // Importar la nueva vista de Análisis de sentimiento
 import SegmentationView from '../components/views/SegmentationView'; // Importar la nueva vista de Segmentación de campañas
-import EmailVerificationView from '../components/views/EmailVerificationView'; // Importar la nueva vista de Verificación por correo
+import SupportView from '../components/views/SupportView'; // Importar la nueva vista de Soporte con IA
+import ProfileView from '../components/views/ProfileView'; // Importar la vista de perfil de usuario
+import ABTestingListView from '../components/views/ABTestingListView'; // Importar la vista de lista de Pruebas A/B
+import CreateABTestView from '../components/views/ABTesting/CreateABTestView'; // Importar la vista de creación de Pruebas A/B
+import CrmAnalysisView from '../components/views/CrmAnalysis/CrmAnalysisView'; // Importar la vista de Análisis CRM
+import AdminView from '../components/views/AdminView/AdminView'; // Importar la vista de Administración
 
 // Importar Layout
 import DashboardLayout from '../layouts/DashboardLayout';
 
-// --- Componentes Placeholder (Movidos fuera) ---
-const SupportView = () => <div style={{padding: '20px'}}>Contenido de Soporte</div>;
+// Ya no necesitamos el componente placeholder de SupportView porque importamos el real
 
 // --- Datos Estáticos (Movidos fuera) ---
 // TODO: Estos datos deberían venir de una API o estado global en una app real
@@ -100,9 +100,9 @@ const emailChartOptions = {
 };
 
 const campaignData = [
-  { id: 1, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...', analisis: '5/30' },
-  { id: 2, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...', analisis: '5/30' },
-  { id: 3, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...', analisis: '5/30' },
+  { id: 1, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...' },
+  { id: 2, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...' },
+  { id: 3, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...' },
 ];
 
 // Registramos los componentes necesarios para Chart.js (Podría moverse a App.tsx si es global)
@@ -162,13 +162,6 @@ function Dashboard() {
         return <CampaignsView onShowCreate={handleShowCreateCampaign} />;
       case 'Contactos':
         return <ContactView />;
-      case 'Datos CRM':
-        return <CrmDataView />; // Usar CrmDataView importado
-      case 'Pruebas A/B': 
-        // Pasar la función de navegación
-        return <ABTestingListView onNavigate={handleViewChange} />;
-      case 'Crear pruebas A/B':
-        return <CreateABTestView onNavigate={handleViewChange} />;
       case 'Metricas': 
         // Ahora usa el componente importado
         return <MetricsView />;
@@ -176,14 +169,20 @@ function Dashboard() {
         return <TrainingView />;
       case 'Recomendacion': 
         return <RecommendationView />;
-      case 'Analisis': 
-        return <SentimentAnalysisView />;
       case 'Segmentacion': 
         return <SegmentationView />;
       case 'Soporte': 
         return <SupportView />;
-      case 'VerificacionEmail':
-        return <EmailVerificationView />;
+      case 'Perfil':
+        return <ProfileView />;
+      case 'Datos CRM':
+        return <CrmAnalysisView />;
+      case 'Pruebas A/B':
+        return <ABTestingListView onNavigate={handleViewChange} />;
+      case 'Crear pruebas A/B':
+        return <CreateABTestView onNavigate={handleViewChange} />;
+      case 'Administracion':
+        return <AdminView />;
       default:
         return <div>Vista no encontrada</div>;
     }

@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { FaPlayCircle, FaSearch } from 'react-icons/fa';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const RecommendationView: React.FC = () => {
-  // Estado para el campo de búsqueda
+  // Estados para el campo de búsqueda y carga
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOption, setSelectedOption] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   
   // Datos de ejemplo para las tarjetas de recomendación
   const recommendationCards = [
@@ -160,7 +163,17 @@ const RecommendationView: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Búsqueda con:', searchQuery, selectedOption);
-    // Aquí iría la lógica de búsqueda
+    
+    // Simulamos una carga de búsqueda
+    setIsLoading(true);
+    setHasSearched(false);
+    
+    // Simulamos una demora en la búsqueda
+    setTimeout(() => {
+      setIsLoading(false);
+      setHasSearched(true);
+      // Aquí iría la lógica real de búsqueda
+    }, 1500);
   };
 
   return (
@@ -197,23 +210,45 @@ const RecommendationView: React.FC = () => {
         </div>
 
         {/* Botón de búsqueda */}
-        <button type="submit" style={buttonStyle}>
-          Buscar
+        <button type="submit" style={buttonStyle} disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <LoadingSpinner size="small" color="white" /> Buscando...
+            </>
+          ) : (
+            'Buscar'
+          )}
         </button>
       </form>
 
+      {/* Mensaje de resultados de búsqueda */}
+      {hasSearched && (
+        <div style={{ marginBottom: '20px', padding: '10px 15px', backgroundColor: '#f9f9f9', borderRadius: '4px', fontSize: '14px', color: '#333' }}>
+          <p style={{ margin: 0 }}>
+            Se encontraron <strong>{recommendationCards.length}</strong> resultados para 
+            <strong>"{searchQuery}"</strong> {selectedOption && <span>en <strong>{selectedOption}</strong></span>}
+          </p>
+        </div>
+      )}
+
       {/* Contenedor de tarjetas de recomendación */}
       <div style={cardsContainerStyle}>
-        {recommendationCards.map(card => (
-          <div key={card.id} style={cardStyle}>
-            <div style={iconContainerStyle}>
-              <FaPlayCircle size={80} color="#F21A2B" />
-            </div>
-            <h2 style={cardTitleStyle}>{card.title}</h2>
-            <p style={cardDescriptionStyle}>{card.description}</p>
-            <button style={viewButtonStyle}>Ver</button>
+        {isLoading ? (
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+            <LoadingSpinner size="large" color="primary" text="Buscando recomendaciones..." />
           </div>
-        ))}
+        ) : (
+          recommendationCards.map(card => (
+            <div key={card.id} style={cardStyle}>
+              <div style={iconContainerStyle}>
+                <FaPlayCircle size={80} color="#F21A2B" />
+              </div>
+              <h2 style={cardTitleStyle}>{card.title}</h2>
+              <p style={cardDescriptionStyle}>{card.description}</p>
+              <button style={viewButtonStyle}>Ver</button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

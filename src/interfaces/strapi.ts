@@ -1,5 +1,16 @@
 // Interfaces para los tipos de datos de Strapi
 // Definimos interface para datos que pueden venir aplanados o con attributes
+
+// Strapi Rich Text Block interface para manejar contenido en formato Rich Text
+export interface StrapiRichTextBlock {
+  type: string;
+  children: {
+    type?: string;
+    text?: string;
+    [key: string]: unknown; // Para otras propiedades que pueda tener
+  }[];
+  [key: string]: unknown; // Para otras propiedades que pueda tener
+}
 type StrapiAttributes<T> = {
   id: number;
 } & ({

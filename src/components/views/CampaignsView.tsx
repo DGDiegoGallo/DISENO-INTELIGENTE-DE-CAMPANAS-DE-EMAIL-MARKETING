@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaEdit, FaTrash, FaEye, FaSpinner, FaSync } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye, FaSync } from 'react-icons/fa';
 import campaignService from '../../services/campaignService';
 import { extractStrapiData } from '../../interfaces/strapi';
+import useLoadingStore from '../../store/useLoadingStore';
 
 interface Campaign {
   id: number;
@@ -89,17 +90,18 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
     setCampaigns(savedCampaigns);
   }, []);
   
-  // Función para cargar campañas desde Strapi
+  // Función para cargar campañas desde Strapi (filtradas por usuario logueado)
   const loadFromStrapi = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
+      useLoadingStore.getState().startLoading('Cargando tus campañas...');
       
-      // Obtener campañas desde Strapi
-      const response = await campaignService.getAllCampaigns(1, 50);
+      // Obtener campañas desde Strapi (solo las del usuario logueado)
+      const response = await campaignService.getUserCampaigns(1, 50);
       
       // Verificar la estructura real de los datos para depuración
-      console.log('Estructura completa de la respuesta:', response);
+      console.log('Estructura completa de la respuesta (campañas del usuario):', response);
       
       // Mapear los datos de Strapi al formato de la interfaz Campaign
       // Usar extractStrapiData para obtener los datos independientemente de si están aplanados o en attributes
@@ -145,10 +147,12 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
       
       setCampaigns(strapiCampaigns);
       setIsLoading(false);
+      useLoadingStore.getState().stopLoading();
     } catch (error) {
       console.error('Error al cargar campañas desde Strapi:', error);
       setError('No se pudieron cargar las campañas desde Strapi. Usando datos locales.');
       setIsLoading(false);
+      useLoadingStore.getState().stopLoading();
       
       // Si falla, cargar desde localStorage como respaldo
       loadFromLocalStorage();
@@ -206,6 +210,8 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
 
   return (
     <div className="container-fluid p-4">
+      {/* Ya no necesitamos este indicador local porque usamos el global */}
+
       {/* Mensajes de estado */}
       {error && (
         <div className="alert alert-danger mb-3" role="alert">
@@ -222,7 +228,7 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div className="d-flex align-items-center">
           <h2 className="mb-0 me-3">Interacciones</h2>
-          {isLoading && <FaSpinner className="fa-spin text-secondary" />}
+          {isLoading && <span className="text-secondary">Cargando...</span>}
         </div>
         <div>
           {/* Toggle para cambiar entre localStorage y Strapi */}

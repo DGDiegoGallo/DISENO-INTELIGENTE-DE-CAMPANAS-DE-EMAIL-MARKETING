@@ -1,26 +1,11 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface User {
   id: number;
-  documentId?: string;
   username: string;
   email: string;
-  provider?: string;
-  confirmed?: boolean;
-  blocked?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  publishedAt?: string;
   nombre?: string;
   apellido?: string;
-  sexo?: string;
-  edad?: number;
-  fechaDeNacimiento?: string;
-  pais?: string;
-  ciudad?: string;
-  domicilio?: string;
-  telefono?: string;
   avatar?: string | null;
   rol?: string;
 }
@@ -29,103 +14,106 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  initialized: boolean;
-  login: (userData: { user: User; token: string }) => void;
+  login: (userData: { user: User; token: string }) => boolean;
   logout: () => void;
+  checkAuth: () => boolean;
 }
 
-// Función para eliminar datos de sesión del localStorage
-const clearStoredData = () => {
+// Función extremadamente simple para recuperar datos del localStorage
+const getStoredAuth = () => {
   try {
-    localStorage.removeItem('auth-storage');
-    localStorage.removeItem('user-storage');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('state');
-    localStorage.setItem('session_closed', 'true');
-    sessionStorage.clear();
-  } catch (error) {
-    console.error('Error al limpiar datos de sesión:', error);
+    const userStr = localStorage.getItem('auth_user');
+    const token = localStorage.getItem('auth_token');
+    if (userStr && token) {
+      const user = JSON.parse(userStr);
+      return { user, token, isAuthenticated: true };
+    }
+  } catch (e) {
+    console.error('Error leyendo auth del localStorage:', e);
   }
+  return { user: null, token: null, isAuthenticated: false };
 };
 
-// Crear el store con persistencia mejorada
-const useUserStore = create<AuthState>()(
-  persist(
-    (set) => ({
+// Crear el store de autenticación simplificado
+const useUserStore = create<AuthState>()((set, get) => ({
+  // Estado inicial basado en localStorage
+  ...getStoredAuth(),
+  
+  // Iniciar sesión
+  login: (userData) => {
+    try {
+      console.log('Guardando datos de autenticación para:', userData.user.email);
+      
+      // Guardar en localStorage usando nuestras nuevas claves
+      localStorage.setItem('auth_user', JSON.stringify(userData.user));
+      localStorage.setItem('auth_token', userData.token);
+      
+      // También mantener compatibilidad con el formato auth-storage que usan otras páginas
+      localStorage.setItem('auth-storage', JSON.stringify({
+        state: {
+          user: userData.user,
+          token: userData.token,
+          isAuthenticated: true
+        },
+        version: 0
+      }));
+      
+      // Para compatibilidad con código existente
+      localStorage.setItem('token', userData.token);
+      localStorage.setItem('user', JSON.stringify(userData.user));
+      
+      // Actualizar el estado
+      set({
+        user: userData.user,
+        token: userData.token,
+        isAuthenticated: true
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error en login:', error);
+      return false;
+    }
+  },
+  
+  // Cerrar sesión
+  logout: () => {
+    // Limpiar todas las claves relacionadas con la autenticación
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth-storage');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    console.log('Todas las claves de autenticación eliminadas');
+    
+    // Restablecer estado
+    set({
       user: null,
       token: null,
-      isAuthenticated: false,
-      initialized: false,
-      
-      login: (userData) => {
-        // Al iniciar sesión, limpiar la bandera de sesión cerrada
-        localStorage.removeItem('session_closed');
-        localStorage.removeItem('userInitializationAttempted');
-        
-        set({ 
-          user: userData.user, 
-          token: userData.token, 
-          isAuthenticated: true,
-          initialized: true
-        });
-        
-        // Guardar también en localStorage directo para compatibilidad
-        try {
-          localStorage.setItem('token', userData.token);
-          localStorage.setItem('user', JSON.stringify(userData.user));
-          localStorage.setItem('state', JSON.stringify({
-            state: {
-              user: userData.user,
-              token: userData.token,
-              isAuthenticated: true
-            },
-            version: 0
-          }));
-        } catch (error) {
-          console.error('Error al guardar datos en localStorage:', error);
-        }
-      },
-      
-      logout: () => {
-        // Borrar datos del store
-        set({ 
-          user: null, 
-          token: null, 
-          isAuthenticated: false,
-          initialized: true
-        });
-        
-        // Borrar datos del localStorage
-        clearStoredData();
-      }
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ 
-        user: state.user, 
-        token: state.token, 
-        isAuthenticated: state.isAuthenticated 
-      }),
-      // Forzar inicialización cuando hay bandera de sesión cerrada
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.initialized = true;
-          
-          // Si hay una bandera de sesión cerrada, no restaurar
-          if (localStorage.getItem('session_closed') === 'true') {
-            state.user = null;
-            state.token = null;
-            state.isAuthenticated = false;
-            console.log('Sesión cerrada. No se restauraron datos.');
-          } else if (state.user && state.token) {
-            console.log('Datos de sesión restaurados para:', state.user.username);
-          }
-        }
-      }
+      isAuthenticated: false
+    });
+  },
+  
+  // Verificar autenticación (útil para proteger rutas)
+  checkAuth: () => {
+    const { isAuthenticated } = get();
+    
+    // Si ya está autenticado en el estado, confiar en eso
+    if (isAuthenticated && get().user && get().token) {
+      return true;
     }
-  )
-);
+    
+    // De lo contrario, verificar localStorage
+    const stored = getStoredAuth();
+    if (stored.isAuthenticated) {
+      // Actualizar el estado si encontramos datos en localStorage
+      set(stored);
+      return true;
+    }
+    
+    return false;
+  }
+}));
 
 export default useUserStore;

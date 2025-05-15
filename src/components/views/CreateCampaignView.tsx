@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaArrowLeft, FaPen, FaEye, FaSpinner, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaPen, FaEye, FaUsers } from 'react-icons/fa';
 import EmailEditorComponent from '../EmailEditor';
 import { Design } from '../../interfaces/emailEditor';
 import campaignService from '../../services/campaignService';
 import authService from '../../services/auth/authService';
 import * as contactsService from '../../services/contactsService';
+import useLoadingStore from '../../store/useLoadingStore';
 
 interface CreateCampaignViewProps {
   onBack: () => void; // Función para volver a la vista anterior
@@ -127,15 +128,36 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
   };
 
   const handleSendCampaign = async () => {
-    // Validar datos requeridos
-    if (!campaignData.title || !campaignData.subject || !campaignData.emailHtml) {
-      setFormState({
-        ...formState,
-        error: 'Por favor completa todos los campos obligatorios: título, asunto y diseño del correo',
-        success: null
-      });
+    // Si hay datos faltantes, no continuar
+    if (!campaignData.title || !campaignData.subject || !campaignData.contactGroup || !campaignData.emailDesign) {
+      alert('Por favor completa todos los campos requeridos');
       return;
     }
+    
+    // Validar que la fecha de envío no sea en el pasado
+    if (campaignData.scheduledTime) {
+      const scheduledDate = new Date(campaignData.scheduledTime);
+      const currentDate = new Date();
+      
+      if (scheduledDate < currentDate) {
+        setFormState({
+          isLoading: false,
+          error: 'No puedes programar una campaña con hora de envío en el pasado',
+          success: null
+        });
+        return;
+      }
+    }
+
+    // Iniciar proceso de envío
+    setFormState({
+      isLoading: true,
+      error: null,
+      success: null
+    });
+    
+    // Activar el indicador de carga global
+    useLoadingStore.getState().startLoading('Guardando campaña...');
     
     // Validar que se haya seleccionado un grupo de contactos
     if (!campaignData.contactGroup) {
@@ -151,8 +173,6 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
     localStorage.setItem('currentCampaign', JSON.stringify(campaignData));
     
     try {
-      setFormState({ ...formState, isLoading: true, error: null, success: null });
-      
       // Obtener el usuario actual
       const currentUser = authService.getCurrentUser();
       const userId = currentUser?.id || 56; // Valor por defecto si no hay usuario
@@ -282,7 +302,11 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
         emailHtml: campaignData.emailHtml,
         // Convertir emailDesign a Record<string, unknown> compatible con ExtendedCampaignData
         emailDesign: campaignData.emailDesign as unknown as Record<string, unknown>,
-        Fechas: new Date().toISOString(),
+        // Usar la fecha programada seleccionada por el usuario
+        // Asegurarnos de que está en UTC para guardar correctamente
+        Fechas: campaignData.scheduledTime ? new Date(campaignData.scheduledTime).toISOString() : new Date().toISOString(),
+        // Campo adicional para mostrar la fecha en formato Argentina (opcional, solo para depuración)
+        fechaArgentina: campaignData.scheduledTime ? new Date(campaignData.scheduledTime).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : null,
         estado: 'borrador' as const,
         contactos: contactEmails,
         gruposdecontactosJSON: gruposdecontactosData as unknown as Record<string, unknown>,
@@ -302,8 +326,11 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
         setFormState({
           isLoading: false,
           error: null,
-          success: '¡La campaña se ha creado correctamente!'
+          success: 'Campaña guardada correctamente'
         });
+        
+        // Desactivar el indicador de carga global
+        useLoadingStore.getState().stopLoading();
         
         // Limpiar localStorage después de una creación exitosa
         localStorage.removeItem('currentCampaign');
@@ -311,12 +338,12 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
         // Mostrar en consola los datos enviados para depuración
         console.log('Campaña creada exitosamente con los siguientes contactos:', campaignPayload.contactos);
       } catch (error) {
-        console.error('Error al guardar la campaña:', error);
+        console.error('Error al guardar la campaña en Strapi:', error);
         
-        let errorMessage = 'No se pudo guardar la campaña, intenta de nuevo.';
-        // Intentar extraer el mensaje de error de la respuesta, si existe
+        // Manejo seguro del mensaje de error
+        let errorMessage = 'Hubo un problema al guardar la campaña';
         if (error instanceof Error) {
-          errorMessage = `Error: ${error.message}`;
+          errorMessage += ': ' + error.message;
         }
         
         setFormState({
@@ -324,6 +351,9 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
           error: errorMessage,
           success: null
         });
+        
+        // Desactivar el indicador de carga global
+        useLoadingStore.getState().stopLoading();
       }
     } catch (error) {
       console.error('Error al guardar la campaña en Strapi:', error);
@@ -339,9 +369,10 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
     setShowPreview(!showPreview);
   };
 
+  // Otras funciones del componente pueden ir aquí
+
   return (
     <div className="container-fluid p-4" style={{ backgroundColor: '#f8f9fa', minHeight: 'calc(100vh - 56px)' }}>
-      {/* Encabezado */}
       {/* Mensajes de estado */}
       {formState.error && (
         <div className="alert alert-danger mb-3" role="alert">
@@ -355,6 +386,7 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
         </div>
       )}
       
+      {/* Encabezado y botones principales */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div className="d-flex align-items-center">
           <button onClick={onBack} className="btn btn-link text-dark p-0 me-3" style={{ fontSize: '1.2rem' }}>
@@ -362,20 +394,17 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
           </button>
           <h2 className="mb-0 fw-bold" style={{ fontSize: '1.5rem' }}>Crear campaña</h2>
         </div>
-        <button 
-          onClick={handleSendCampaign}
-          className="btn text-white fw-bold px-4 py-2" 
-          style={{ backgroundColor: '#F21A2B', borderRadius: '8px' }}
-          disabled={formState.isLoading}
-        >
-          {formState.isLoading ? (
-            <>
-              <FaSpinner className="fa-spin me-2" /> Guardando...
-            </>
-          ) : (
-            'Enviar'
-          )}
-        </button>
+        
+        <div>
+          <button 
+            onClick={handleSendCampaign}
+            className="btn text-white fw-bold px-4 py-2" 
+            style={{ backgroundColor: '#F21A2B', borderRadius: '8px' }}
+            disabled={formState.isLoading || !campaignData.title || !campaignData.subject || !campaignData.contactGroup || !campaignData.emailDesign}
+          >
+            {formState.isLoading ? 'Guardando...' : 'Enviar'}
+          </button>
+        </div>
       </div>
 
       {/* Contenido del formulario y diseño */}
@@ -436,11 +465,16 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
               <label htmlFor="scheduledTime" className="form-label text-muted small mb-1">Hora de envío</label>
               <input 
                 type="datetime-local" 
-                className="form-control" 
+                className={`form-control ${formState.error && formState.error.includes('hora de envío') ? 'is-invalid' : ''}`} 
                 id="scheduledTime" 
                 value={campaignData.scheduledTime}
                 onChange={handleInputChange}
+                min={new Date().toISOString().slice(0, 16)}
               />
+              {formState.error && formState.error.includes('hora de envío') && (
+                <div className="invalid-feedback">{formState.error}</div>
+              )}
+              <small className="text-muted mt-1 d-block">Selecciona una fecha y hora actual o futura</small>
             </div>
           </div>
         </div>

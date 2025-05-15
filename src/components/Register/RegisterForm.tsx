@@ -132,11 +132,10 @@ const RegisterForm: React.FC = () => {
       if (!termsAccepted) newErrors.terms = 'Debes aceptar los términos y condiciones';
     } 
     else if (registrationStep === 2) {
-      // Validación de información personal
+      // Validación de información personal y contacto
       if (!nombre.trim()) newErrors.nombre = 'El nombre es obligatorio';
       if (!apellido.trim()) newErrors.apellido = 'El apellido es obligatorio';
     }
-    // No hay validaciones obligatorias para el paso 3 (información de contacto)
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -145,7 +144,8 @@ const RegisterForm: React.FC = () => {
   // Avanzar al siguiente paso
   const handleNext = () => {
     if (validateStep()) {
-      setRegistrationStep(registrationStep + 1);
+      clearError();
+      setRegistrationStep(Math.min(2, registrationStep + 1)); // Máximo 2 pasos
     }
   };
 
@@ -323,10 +323,10 @@ const RegisterForm: React.FC = () => {
     </>
   );
 
-  // Renderizar paso 2: Información personal
+  // Renderizar paso 2: Información personal y contacto
   const renderStep2 = () => (
     <>
-      <h2 className="text-center mb-4">Información Personal</h2>
+      <h2 className="text-center mb-4">Información Personal y Contacto</h2>
       
       {/* Nombre */}
       <div className="mb-3">
@@ -401,12 +401,6 @@ const RegisterForm: React.FC = () => {
           onChange={(e) => setFechaDeNacimiento(e.target.value)}
         />
       </div>
-    </>
-  );
-
-  // Renderizar paso 3: Información de contacto
-  const renderStep3 = () => (
-    <>
       <h2 className="text-center mb-4">Información de Contacto</h2>
       
       {/* País */}
@@ -494,7 +488,6 @@ const RegisterForm: React.FC = () => {
     switch (registrationStep) {
       case 1: return renderStep1();
       case 2: return renderStep2();
-      case 3: return renderStep3();
       default: return renderStep1();
     }
   };
@@ -512,7 +505,7 @@ const RegisterForm: React.FC = () => {
         </button>
       )}
       
-      {registrationStep < 3 ? (
+      {registrationStep < 2 ? (
         <button
           type="button"
           className="btn btn-danger ms-auto"
@@ -540,7 +533,7 @@ const RegisterForm: React.FC = () => {
   const renderStepIndicator = () => (
     <div className="mb-4">
       <div className="d-flex justify-content-between">
-        {[1, 2, 3].map((step) => (
+        {[1, 2].map((step) => (
           <div key={step} className="text-center" style={{ flex: 1 }}>
             <div 
               className={`rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 ${
@@ -558,7 +551,7 @@ const RegisterForm: React.FC = () => {
               {step}
             </div>
             <small className={registrationStep >= step ? 'text-dark' : 'text-muted'}>
-              {step === 1 ? 'Credenciales' : step === 2 ? 'Personal' : 'Contacto'}
+              {step === 1 ? 'Credenciales' : 'Personal'}
             </small>
           </div>
         ))}
@@ -567,7 +560,7 @@ const RegisterForm: React.FC = () => {
         <div
           className="progress-bar bg-danger"
           role="progressbar"
-          style={{ width: `${((registrationStep - 1) / 2) * 100}%` }}
+          style={{ width: `${((registrationStep - 1) / 1) * 100}%` }}
         ></div>
       </div>
     </div>

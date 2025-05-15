@@ -33,7 +33,6 @@ interface Campaign {
     id: number;
     fecha: string;
     detalles: string;
-    analisis: string;
 }
 
 interface InicioViewProps {
@@ -91,9 +90,8 @@ const InicioView: React.FC<InicioViewProps> = ({ emailChartData, emailChartOptio
       <div> {/* Contenedor General sin estilos propios */}
         {/* Cabecera (mantiene su estilo) */}
         <div className="row g-0 text-white rounded-top mb-3" style={{ backgroundColor: '#282A5B', padding: '0.75rem 1.25rem' }}>
-          <div className="col-3 fw-bold">Fecha</div>
-          <div className="col-4 fw-bold">Detalles</div>
-          <div className="col-2 fw-bold">Análisis</div>
+          <div className="col-4 fw-bold">Fecha</div>
+          <div className="col-5 fw-bold">Detalles</div>
           <div className="col-3 fw-bold text-end">Acciones</div>
         </div>
         {/* Cuerpo (cada fila es una tarjeta separada) */}
@@ -105,9 +103,8 @@ const InicioView: React.FC<InicioViewProps> = ({ emailChartData, emailChartOptio
                 padding: '0.75rem 1.25rem' // Padding original
               }}
             >
-              <div className="col-3">{campaign.fecha}</div>
-              <div className="col-4">{campaign.detalles}</div>
-              <div className="col-2">{campaign.analisis}</div>
+              <div className="col-4">{campaign.fecha}</div>
+              <div className="col-5">{campaign.detalles}</div>
               <div className="col-3 text-end">
                 <button className="btn btn-sm btn-link p-0 me-2" title="Editar">
                   <FaEdit />

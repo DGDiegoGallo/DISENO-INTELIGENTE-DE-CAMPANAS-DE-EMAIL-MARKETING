@@ -8,11 +8,11 @@ import {
   FaChartBar, 
   FaGraduationCap, 
   FaLightbulb, 
-  FaSmile, 
   FaUserFriends, 
   FaHeadset,
   FaSignOutAlt,
-  FaEnvelope
+  FaEnvelope,
+  FaUser
 } from 'react-icons/fa';
 import authService from '../../services/auth/authService';
 import useUserStore from '../../store/useUserStore';
@@ -99,66 +99,28 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
     onNavigate(viewName);
   };
   
-  // Función para manejar el logout
+  // Función simplificada para manejar el logout
   const handleLogout = () => {
-    // Establecer una bandera para indicar que la sesión fue cerrada explícitamente
-    localStorage.setItem('session_closed', 'true');
+    console.log('Cerrando sesión...');
     
-    // Limpiar los datos de sesión usando authService
-    authService.logout();
-    
-    // Llamar a la función logout de Zustand
-    logout();
-    console.log('Sesión cerrada correctamente en Zustand');
-    
-    // Limpiar localStorage completamente
-    console.log('Limpiando localStorage completamente...');
-    localStorage.clear();
-    
-    // Volver a establecer la bandera de sesión cerrada para que no intente reiniciar la sesión
-    localStorage.setItem('session_closed', 'true');
-    
-    // Eliminar datos de sessionStorage
-    sessionStorage.clear();
-    
-    // Eliminar todas las cookies
-    document.cookie.split(';').forEach(cookie => {
-      const [name] = cookie.split('=');
-      if (name) {
-        document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-      }
-    });
-    
-    console.log('Todos los datos de sesión han sido eliminados');
-    
-    // Forzar la navegación de manera incondicional
-    // Usar un formulario para evitar cualquier intercepción por parte de react-router u otras bibliotecas
-    const form = document.createElement('form');
-    form.method = 'GET';
-    form.action = '/login';
-    
-    // Añadir parámetro para indicar que es un cierre de sesión forzado
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'forceLogout';
-    input.value = 'true';
-    form.appendChild(input);
-    
-    // Añadir al DOM y hacer submit
-    document.body.appendChild(form);
-    
-    // Mensaje de cierre de sesión
-    document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;"><div style="text-align: center; background: #f8f9fa; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);"><h1 style="color: #343a40; margin-bottom: 20px;">Cerrando sesión...</h1><p style="color: #6c757d; margin-bottom: 30px;">Por favor espere mientras lo redirigimos.</p><div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #F21A2B; border-radius: 50%; margin: 0 auto; animation: spin 1s linear infinite;"></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style></div></div>';
-    
-    // Submtir el formulario después de un breve retraso
-    setTimeout(() => {
-      form.submit();
-    }, 300);
-    
-    // Como medida de emergencia, si nada funciona después de 1 segundo, forzar redirección
-    setTimeout(() => {
-      window.location.href = '/login?forceLogout=true&emergency=true';
-    }, 1000);
+    try {
+      // 1. Usar la función de logout del store Zustand
+      logout();
+      
+      // 2. Como respaldo, también usar el servicio de autenticación
+      authService.logout();
+      
+      console.log('Sesión cerrada correctamente');
+      
+      // 3. Redirigir usando window.location para forzar recarga completa
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      
+      // Si falla, intentar redirección directa como último recurso
+      window.location.href = '/login';
+    }
+    // No necesitamos medidas de emergencia adicionales
   };
   
   return (
@@ -229,17 +191,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
         </div>
         
         <div 
-          style={{...navItemStyle, ...(activeView === 'Analisis' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('Analisis', e)}
-        >
-          <FaSmile style={{...iconStyle, ...(activeView === 'Analisis' ? activeIconStyle : {})}} />
-          <span style={twoLineTextStyle}>
-            <span>Análisis</span>
-            <span>de sentimiento</span>
-          </span>
-        </div>
-        
-        <div 
           style={{...navItemStyle, ...(activeView === 'Segmentacion' ? activeNavItemStyle : {})}} 
           onClick={(e) => handleNavClick('Segmentacion', e)}
         >
@@ -263,6 +214,24 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
         >
           <FaEnvelope style={{...iconStyle, ...(activeView === 'VerificacionEmail' ? activeIconStyle : {})}} /> Verificación Email
         </div>
+
+        {/* Acceso a Admin solo para rol admin */}
+        {useUserStore.getState().user?.rol === 'admin' && (
+          <div 
+            style={{...navItemStyle, ...(activeView === 'Administracion' ? activeNavItemStyle : {})}} 
+            onClick={(e) => handleNavClick('Administracion', e)}
+          >
+            <FaUser style={{...iconStyle, ...(activeView === 'Administracion' ? activeIconStyle : {})}} /> Administración
+          </div>
+        )}
+      </div>
+      
+      {/* Enlace al perfil */}
+      <div 
+        style={{...navItemStyle, ...(activeView === 'Perfil' ? activeNavItemStyle : {}), marginTop: 'auto', borderTop: '1px solid #e9e9e9'}}
+        onClick={(e) => handleNavClick('Perfil', e)}
+      >
+        <FaUser style={{...iconStyle, ...(activeView === 'Perfil' ? activeIconStyle : {})}} /> Mi Perfil
       </div>
       
       {/* Botón de logout */}

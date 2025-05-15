@@ -5,6 +5,7 @@ import EditGroupModal from '../EditGroupModal';
 import DeleteContactModal from '../DeleteContactModal';
 import * as contactsService from '../../services/contactsService';
 import { useAuthStore } from '../../store';
+import useLoadingStore from '../../store/useLoadingStore';
 
 interface Contact {
   id: number; 
@@ -99,6 +100,8 @@ const ContactView: React.FC = () => {
   const fetchContactGroups = async () => {
     try {
       setLoading(true);
+      // Activar indicador de carga global
+      useLoadingStore.getState().startLoading('Sincronizando contactos...');
       let userIdToUse = getCurrentUserId();
       
       console.log('Usuario actual:', user);
@@ -178,8 +181,12 @@ const ContactView: React.FC = () => {
       }
     } catch (error) {
       console.error('Error al obtener grupos de contactos:', error);
+      // Asegurar que se muestre el error al usuario
+      alert('Error al sincronizar contactos: ' + error);
     } finally {
       setLoading(false);
+      // IMPORTANTE: Asegurar que SIEMPRE se detenga el indicador de carga global
+      useLoadingStore.getState().stopLoading();
     }
   };
   

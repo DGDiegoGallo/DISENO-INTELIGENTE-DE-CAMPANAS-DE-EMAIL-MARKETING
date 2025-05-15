@@ -69,9 +69,16 @@ export const removeGroup = (groupName: string): void => {
 // Añadir un nuevo contacto
 export const addContact = (contact: Omit<Contact, 'id'>): Contact => {
   const contacts = getAllContacts();
+  
+  // Generar un ID único que evite colisiones
+  // Combinamos timestamp con un número aleatorio
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 10000);
+  const uniqueId = timestamp * 10000 + random;
+  
   const newContact = {
     ...contact,
-    id: Date.now()
+    id: uniqueId
   };
   
   contacts.push(newContact);

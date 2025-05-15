@@ -2,7 +2,7 @@ import axios from 'axios';
 import authService from './auth/authService';
 
 // URL base de la API de Strapi
-const API_URL = 'http://34.238.122.213:1337';
+export const API_URL = 'http://34.238.122.213:1337';
 
 // Configuración para las solicitudes autenticadas
 const getAuthConfig = () => {

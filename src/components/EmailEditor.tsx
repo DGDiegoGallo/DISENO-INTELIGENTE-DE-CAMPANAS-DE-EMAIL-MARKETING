@@ -182,7 +182,12 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
                 }
               }
             },
+            // Configuración y desactivación de herramientas específicas
+            displayMode: 'email',
             tools: {
+              image: {
+                enabled: false
+              },
               heading: {
                 properties: {
                   color: {
@@ -198,18 +203,46 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
                 }
               }
             },
+            // Traducciones completas en español
             translations: {
               'es-ES': {
+                // Encabezados y títulos
                 'editor.heading': 'Encabezado',
                 'editor.text': 'Texto',
                 'editor.button': 'Botón',
-                'editor.image': 'Imagen',
                 'editor.divider': 'Divisor',
                 'editor.columns': 'Columnas',
                 'editor.social': 'Social',
                 'editor.html': 'HTML',
+                // Botones de acción
                 'editor.save': 'Guardar',
-                'editor.cancel': 'Cancelar'
+                'editor.cancel': 'Cancelar',
+                // Propiedades comunes
+                'editor.colorsPalette': 'Paleta de colores',
+                'editor.textColor': 'Color de texto',
+                'editor.backgroundColor': 'Color de fondo',
+                'editor.alignment': 'Alineación',
+                'editor.font': 'Fuente',
+                'editor.fontSize': 'Tamaño de fuente',
+                'editor.lineHeight': 'Altura de línea',
+                'editor.letterSpacing': 'Espaciado de letras',
+                'editor.link': 'Enlace',
+                'editor.url': 'URL',
+                'editor.textToDisplay': 'Texto a mostrar',
+                'editor.openIn': 'Abrir en',
+                'editor.sameTab': 'Misma pestaña',
+                'editor.newTab': 'Nueva pestaña',
+                // Botones e interacciones
+                'editor.apply': 'Aplicar',
+                'editor.remove': 'Eliminar',
+                'editor.edit': 'Editar',
+                'editor.delete': 'Borrar',
+                'editor.duplicate': 'Duplicar',
+                'editor.move': 'Mover',
+                'editor.preview': 'Vista previa',
+                'editor.export': 'Exportar',
+                'editor.undo': 'Deshacer',
+                'editor.redo': 'Rehacer'
               }
             },
             locale: 'es-ES'
