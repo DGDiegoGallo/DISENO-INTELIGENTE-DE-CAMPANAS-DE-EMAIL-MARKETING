@@ -2,9 +2,12 @@ import { CSSProperties } from 'react';
 
 // Estilos principales
 export const viewStyle: CSSProperties = {
+  position: 'relative', // Added for local spinner context
   padding: '25px',
-  fontFamily: 'Arial, sans-serif',
-  backgroundColor: '#f8f9fa'
+  fontFamily: "'Inter', sans-serif", // Using a more modern font, ensure it's imported globally or fallback
+  backgroundColor: '#f4f6f8', // Slightly softer background
+  maxHeight: 'calc(100vh - 90px)', // Adjust 90px based on actual navbar height
+  overflowY: 'auto',
 };
 
 export const headerStyle: CSSProperties = {
@@ -22,40 +25,44 @@ export const titleContainerStyle: CSSProperties = {
 
 export const titleStyle: CSSProperties = {
   margin: 0,
-  color: '#333',
-  fontSize: '22px'
-};
-
-export const backIconStyle: CSSProperties = {
-  color: '#555',
-  cursor: 'pointer',
-  fontSize: '18px'
+  color: '#282A5B', // Navy Blue
+  fontSize: '24px',
+  fontWeight: 'bold',
 };
 
 // Estilos de botones
 export const buttonStyle: CSSProperties = {
   padding: '10px 20px',
-  backgroundColor: '#F21A2B',
+  backgroundColor: '#F21A2B', // Red
   color: 'white',
   border: 'none',
-  borderRadius: '4px',
+  borderRadius: '6px', // Slightly more rounded
   cursor: 'pointer',
   fontWeight: 'bold',
-  fontSize: '14px'
+  fontSize: '15px',
+  transition: 'background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+};
+
+export const buttonHoverStyle: CSSProperties = {
+  backgroundColor: '#D01020', // Darker Red
+  boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
 };
 
 export const disabledButtonStyle: CSSProperties = {
   ...buttonStyle,
-  backgroundColor: '#ccc',
-  cursor: 'not-allowed'
+  backgroundColor: '#cccccc',
+  color: '#666666',
+  cursor: 'not-allowed',
+  boxShadow: 'none',
 };
 
 // Estilos de contenedores
 export const contentContainerStyle: CSSProperties = {
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
-  gap: '20px',
-  marginBottom: '20px'
+  gap: '24px', // Increased gap
+  marginBottom: '24px'
 };
 
 // Estilos de mensajes
@@ -85,10 +92,11 @@ export const previewContainerStyle: CSSProperties = {
 };
 
 export const previewHeaderStyle: CSSProperties = {
-  padding: '10px',
-  backgroundColor: '#f8f9fa',
+  padding: '12px 15px',
+  backgroundColor: '#ffffff', // White background for contrast
   borderRadius: '8px',
-  marginBottom: '10px'
+  marginBottom: '10px',
+  border: '1px solid #e0e0e0',
 };
 
 export const previewTitleContainerStyle: CSSProperties = {
@@ -100,14 +108,37 @@ export const previewTitleContainerStyle: CSSProperties = {
 
 export const previewTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: '16px'
+  fontSize: '17px',
+  fontWeight: '600',
+  color: '#282A5B', // Navy Blue
 };
 
 export const previewContentStyle: CSSProperties = {
-  border: '1px solid #e0e0e0',
-  borderRadius: '4px',
-  backgroundColor: 'white',
-  padding: '10px',
+  border: '1px solid #e9edf0',
+  borderRadius: '6px',
+  backgroundColor: '#f8f9fa', // Light background for content area
+  padding: '15px',
   maxHeight: '300px',
-  overflowY: 'auto'
+  overflowY: 'auto',
+  lineHeight: '1.6',
+};
+
+// New style for general form sections/cards
+export const formSectionStyle: CSSProperties = {
+  backgroundColor: 'white',
+  padding: '20px 25px',
+  borderRadius: '8px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+  marginBottom: '24px',
+};
+
+// New style for h4 section titles
+export const sectionTitleStyle: CSSProperties = {
+  color: '#282A5B', // Navy Blue
+  fontSize: '20px',
+  fontWeight: 'bold',
+  marginBottom: '16px',
+  paddingBottom: '8px',
+  borderBottom: `2px solid #F21A2B`, // Red accent
+  display: 'inline-block',
 };

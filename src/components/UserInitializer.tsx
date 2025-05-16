@@ -7,7 +7,7 @@ import useUserStore from '../store/useUserStore';
  */
 const UserInitializer: React.FC = () => {
   // Obtener estados y acciones del store
-  const { isAuthenticated, initialized } = useUserStore();
+  const { isAuthenticated } = useUserStore();
 
   // Solo para depuración y registro
   useEffect(() => {
@@ -15,10 +15,8 @@ const UserInitializer: React.FC = () => {
     const sessionClosed = localStorage.getItem('session_closed') === 'true';
     
     // Solo emitir logs la primera vez
-    if (initialized) {
-      console.log(`Estado de la sesión: autenticado=${isAuthenticated}, sesionCerrada=${sessionClosed}`);
-    }
-  }, [isAuthenticated, initialized]);
+    console.log(`Estado de la sesión: autenticado=${isAuthenticated}, sesionCerrada=${sessionClosed}`);
+  }, [isAuthenticated]);
 
   // Este componente no renderiza nada
   return null;

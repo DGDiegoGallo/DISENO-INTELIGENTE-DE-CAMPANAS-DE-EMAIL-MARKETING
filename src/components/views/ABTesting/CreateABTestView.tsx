@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaArrowLeft, FaChartBar } from 'react-icons/fa';
+// FaUndo is now used in ActionButtons.tsx
 import useLoadingStore from '../../../store/useLoadingStore';
 import campaignService, { Campaign } from '../../../services/campaignService';
 import * as abTestingService from '../../../services/abTestingComparisonService';
@@ -7,34 +7,37 @@ import { TestResults } from './interfaces/testResults';
 import { transformStrapiCollection, transformStrapiSingle } from '../../../services/strapiHelpers';
 
 // Componentes
-import CampaignSelector from './components/CampaignSelector';
-import CampaignPreview from './components/CampaignPreview';
+import LoadingSpinner from '../../common/LoadingSpinner';
+// CampaignSelector and CampaignPreview will be used within CampaignSelectionCard
 import TestResultsDisplay from './components/TestResultsDisplay';
+import ActionButtons from './components/ActionButtons';
+import ABTestFormHeader from './components/ABTestFormHeader';
+import ABTestNameInput from './components/ABTestNameInput';
+import CampaignSelectionCard from './components/CampaignSelectionCard';
 
 // Estilos
 import {
-  viewStyle,
-  headerStyle,
-  titleContainerStyle,
   titleStyle,
-  backIconStyle,
-  buttonStyle,
-  disabledButtonStyle,
+  headerStyle,
+  viewStyle,
+  titleContainerStyle,
   contentContainerStyle,
   errorMessageStyle,
-  successMessageStyle,
+  successMessageStyle, // Re-added for save confirmation
   previewContainerStyle,
   previewHeaderStyle,
   previewTitleContainerStyle,
   previewTitleStyle,
-  previewContentStyle
+  previewContentStyle,
+  formSectionStyle, 
+  sectionTitleStyle, 
+  buttonStyle,
+  disabledButtonStyle,
+  buttonHoverStyle 
 } from './styles/CreateABTestView.styles';
 
-interface CreateABTestViewProps {
-  onNavigate: (view: string) => void;
-}
-
-const CreateABTestView: React.FC<CreateABTestViewProps> = ({ onNavigate }) => {
+const CreateABTestView: React.FC = () => {
+  // Hover states for buttons will be managed within ActionButtons.tsx
   // Estados
   const [testName, setTestName] = useState('');
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -46,9 +49,18 @@ const CreateABTestView: React.FC<CreateABTestViewProps> = ({ onNavigate }) => {
   const [loadingCampaignA, setLoadingCampaignA] = useState(false);
   const [loadingCampaignB, setLoadingCampaignB] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(''); // Re-added for save confirmation
   const [testResults, setTestResults] = useState<TestResults | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [isGeneratingResults, setIsGeneratingResults] = useState(false);
+
+  // Función para hacer scroll a la sección de resultados
+  const scrollToResults = useCallback(() => {
+    const resultsSection = document.getElementById('results-section');
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   // Función para cargar campañas disponibles
   const loadCampaigns = useCallback(async () => {
@@ -68,6 +80,7 @@ const CreateABTestView: React.FC<CreateABTestViewProps> = ({ onNavigate }) => {
       );
       
       setCampaigns(filteredCampaigns);
+      setSuccessMessage('Campañas cargadas con éxito.'); // Update success message states. Por favor intente nuevamente.');
     } catch (error) {
       console.error('Error al cargar campañas:', error);
       setErrorMessage('No se pudieron cargar las campañas. Por favor intente nuevamente.');
@@ -196,221 +209,192 @@ const CreateABTestView: React.FC<CreateABTestViewProps> = ({ onNavigate }) => {
   }, [campaignA, campaignB, testName]);
 
   // Generar resultados de la prueba A/B
-  const generateResults = useCallback(() => {
+  const generateResults = useCallback(async () => {
     if (!validateTestData()) return;
 
-    try {
-      // Generar resultados simulados
-      const results = abTestingService.generateTestResults(campaignA!, campaignB!, testName);
-      setTestResults(results);
-      setShowResults(true);
-      setErrorMessage('');
-      
-      // Desplazarse hacia los resultados
-      setTimeout(() => {
-        window.scrollTo({ 
-          top: document.getElementById('results-section')?.offsetTop || 0,
-          behavior: 'smooth'
-        });
-      }, 100);
-    } catch (error) {
-      console.error('Error al generar resultados:', error);
-      setErrorMessage('Error al generar los resultados de la prueba A/B.');
-    }
-  }, [campaignA, campaignB, testName, validateTestData]);
+    setIsGeneratingResults(true);
+    setErrorMessage('');
+    setSuccessMessage(''); 
+    setTestResults(null);
+    setShowResults(false);
+    // Not using global loading store here to keep spinner logic self-contained for now
 
-  // Guardar la prueba A/B
-  const saveTest = useCallback(() => {
-    if (!testResults || !campaignA || !campaignB) {
-      setErrorMessage('No hay resultados para guardar. Por favor genere resultados primero.');
-      return;
-    }
+    console.log('Attempting to generate A/B test results...');
+    console.log('Campaign A:', campaignA);
+    console.log('Campaign B:', campaignB);
 
     try {
-      // Guardar prueba A/B en localStorage
-      abTestingService.saveABTest(testName, campaignA, campaignB, testResults);
+      if (!campaignA || !campaignB) {
+        setErrorMessage('Las campañas A y B deben estar seleccionadas.');
+        return; // Early exit if campaigns are not set
+      }
+
+      // Simular la comparación de las campañas
+      const newResults = abTestingService.generateTestResults(campaignA, campaignB, testName);
+      console.log('Resultados de la comparación:', newResults);
       
-      // Mostrar mensaje de éxito
-      setSuccessMessage('Prueba A/B guardada correctamente.');
+      setTestResults(newResults);
+      setShowResults(true); 
       
-      // Volver a la lista después de un breve retraso
-      setTimeout(() => {
-        onNavigate('Pruebas A/B');
-      }, 1500);
+      // Guardar en localStorage
+      try {
+        abTestingService.saveABTest(testName, campaignA, campaignB, newResults);
+        setSuccessMessage('Resultados generados y guardados en localStorage con éxito.');
+        // No llamar a scrollToResults aquí, se llamará después del delay en finally
+      } catch (saveError) {
+        console.error('Error al guardar la prueba A/B en localStorage:', saveError);
+        setErrorMessage('Resultados generados, pero error al guardar en localStorage.');
+        // Still show results even if save fails for now
+      }
+
     } catch (error) {
-      console.error('Error al guardar prueba A/B:', error);
-      setErrorMessage('Error al guardar la prueba A/B. Por favor intente nuevamente.');
+      console.error('Error al generar resultados A/B:', error);
+      setErrorMessage('Error al generar los resultados. Por favor, intente de nuevo.');
+      setShowResults(false);
+    } finally {
+      // Simulate a 2-second loading time for spinner visibility
+      setTimeout(() => {
+        setIsGeneratingResults(false);
+        console.log('Finished generating A/B test results attempt after delay. isGeneratingResults:', false);
+        // Scroll to results after delay and state update
+        if (document.getElementById('results-section')) {
+          scrollToResults();
+        }
+      }, 2000);
     }
-  }, [testResults, campaignA, campaignB, testName, onNavigate]);
+  }, [campaignA, campaignB, testName, validateTestData, scrollToResults]);
+
+  // Función para reiniciar el estado de la prueba A/B
+  const handleResetTest = useCallback(() => {
+    setTestName('');
+    setCampaignAId(null);
+    setCampaignBId(null);
+    setCampaignA(null);
+    setCampaignB(null);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    // If there were results shown, attempt to delete them from localStorage
+    if (testResults && testResults.testId) {
+      try {
+        const deleted = abTestingService.deleteTest(testResults.testId);
+        if (deleted) {
+          console.log(`A/B Test ${testResults.testId} deleted from localStorage.`);
+          // Optionally, set a success message for deletion if needed, though resetting fields might be enough UX
+        } else {
+          console.warn(`A/B Test ${testResults.testId} not found in localStorage or already deleted.`);
+        }
+      } catch (error) {
+        console.error('Error deleting A/B Test from localStorage:', error);
+        // Optionally, set an error message for the deletion failure
+      }
+    }
+
+    setTestResults(null);
+    setShowResults(false);
+    setIsGeneratingResults(false); // Asegurar que el spinner se detenga si se resetea
+
+    // Desplazar al inicio del formulario para mejorar UX al reiniciar
+    const formElement = document.getElementById('test-name');
+    if (formElement) {
+      formElement.focus();
+      const yOffset = -80; // Ajuste para visibilidad del label
+      const y = formElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({top: y, behavior: 'smooth'});
+    } else {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  }, [testResults]); // Added testResults to dependency array
 
   return (
-    <div className="container-fluid py-4" style={viewStyle}>
-      {/* Cabecera */}
-      <div style={headerStyle}>
-        <div style={titleContainerStyle}>
-          <FaArrowLeft 
-            style={backIconStyle}
-            onClick={() => onNavigate('Pruebas A/B')}
-            title="Volver a la lista"
-          />
-          <h2 style={titleStyle}>Crear prueba A/B</h2>
-        </div>
-        <button 
-          style={testResults ? buttonStyle : disabledButtonStyle}
-          onClick={saveTest}
-          disabled={!testResults}
-        >
-          Guardar prueba
-        </button>
-      </div>
-
-      {/* Mensajes */}
-      {errorMessage && (
-        <div style={errorMessageStyle}>
-          {errorMessage}
-        </div>
-      )}
-      
-      {successMessage && (
-        <div style={successMessageStyle}>
-          {successMessage}
+    <div style={viewStyle}>
+      {isGeneratingResults && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <LoadingSpinner isVisible={true} text="Generando resultados..." />
         </div>
       )}
 
-      {/* Formulario */}
-      <div className="bg-white p-4 rounded shadow-sm mb-4">
-        <div className="row g-3">
-          <div className="col-md-12">
-            <label className="form-label" htmlFor="test-name">Nombre de la prueba A/B</label>
-            <input
-              className="form-control"
-              id="test-name"
-              type="text"
-              placeholder="Ej: Comparación de asuntos - Newsletter Mayo"
-              value={testName}
-              onChange={(e) => setTestName(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
+      <ABTestFormHeader 
+        headerStyle={headerStyle}
+        titleContainerStyle={titleContainerStyle}
+        titleStyle={titleStyle}
+      />
+
+      {errorMessage && <div style={errorMessageStyle}>{errorMessage}</div>}
+      {successMessage && <div style={successMessageStyle}>{successMessage}</div>}
+
+      <ABTestNameInput 
+        testName={testName}
+        onTestNameChange={setTestName}
+        formSectionStyle={formSectionStyle}
+      />
       
-      {/* Selección de campañas */}
-      <h4 className="mb-3">Selección de campañas a comparar</h4>
+      <h4 style={sectionTitleStyle}>Selección de campañas a comparar</h4>
       
       <div style={contentContainerStyle}>
-        <div>
-          <CampaignSelector
-            label="Campaña A"
-            campaigns={campaigns}
-            selectedCampaignId={campaignAId}
-            onChange={handleCampaignAChange}
-            disabled={isLoading || loadingCampaignA}
-            isLoading={loadingCampaignA}
-            excludeCampaignId={campaignBId} // Excluir la campaña B si está seleccionada
-          />
-          
-          {campaignA && (
-            <>
-              <CampaignPreview 
-                campaign={campaignA}
-                title="Previsualización de Campaña A"
-                loading={loadingCampaignA}
-              />
-              
-              {/* Vista previa del HTML */}
-              {campaignA.contenidoHTML && (
-                <div style={previewContainerStyle}>
-                  <div style={previewHeaderStyle}>
-                    <div style={previewTitleContainerStyle}>
-                      <h4 style={previewTitleStyle}>Vista previa del correo</h4>
-                    </div>
-                    <div 
-                      style={previewContentStyle}
-                      dangerouslySetInnerHTML={{ 
-                        __html: typeof campaignA.contenidoHTML === 'string' 
-                          ? campaignA.contenidoHTML 
-                          : Array.isArray(campaignA.contenidoHTML)
-                            ? campaignA.contenidoHTML.map(block => 
-                                block.children?.map(child => child.text || '').join(' ') || ''
-                              ).join('\n')
-                            : ''
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <div>
-          <CampaignSelector
-            label="Campaña B"
-            campaigns={campaigns}
-            selectedCampaignId={campaignBId}
-            onChange={handleCampaignBChange}
-            disabled={isLoading || loadingCampaignB}
-            isLoading={loadingCampaignB}
-            excludeCampaignId={campaignAId} // Excluir la campaña A si está seleccionada
-          />
-          
-          {campaignB && (
-            <>
-              <CampaignPreview 
-                campaign={campaignB}
-                title="Previsualización de Campaña B"
-                loading={loadingCampaignB}
-              />
-              
-              {/* Vista previa del HTML */}
-              {campaignB.contenidoHTML && (
-                <div style={previewContainerStyle}>
-                  <div style={previewHeaderStyle}>
-                    <div style={previewTitleContainerStyle}>
-                      <h4 style={previewTitleStyle}>Vista previa del correo</h4>
-                    </div>
-                    <div 
-                      style={previewContentStyle}
-                      dangerouslySetInnerHTML={{ 
-                        __html: typeof campaignB.contenidoHTML === 'string' 
-                          ? campaignB.contenidoHTML 
-                          : Array.isArray(campaignB.contenidoHTML)
-                            ? campaignB.contenidoHTML.map(block => 
-                                block.children?.map(child => child.text || '').join(' ') || ''
-                              ).join('\n')
-                            : ''
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <CampaignSelectionCard 
+          label="Campaña A"
+          campaigns={campaigns}
+          selectedCampaignId={campaignAId}
+          onCampaignChange={handleCampaignAChange}
+          isLoadingSelector={isLoading || loadingCampaignA}
+          campaignData={campaignA}
+          isLoadingPreview={loadingCampaignA}
+          excludeCampaignId={campaignBId}
+          previewContainerStyle={previewContainerStyle}
+          previewHeaderStyle={previewHeaderStyle}
+          previewTitleContainerStyle={previewTitleContainerStyle}
+          previewTitleStyle={previewTitleStyle}
+          previewContentStyle={previewContentStyle}
+        />
+        <CampaignSelectionCard 
+          label="Campaña B"
+          campaigns={campaigns}
+          selectedCampaignId={campaignBId}
+          onCampaignChange={handleCampaignBChange}
+          isLoadingSelector={isLoading || loadingCampaignB}
+          campaignData={campaignB}
+          isLoadingPreview={loadingCampaignB}
+          excludeCampaignId={campaignAId}
+          previewContainerStyle={previewContainerStyle}
+          previewHeaderStyle={previewHeaderStyle}
+          previewTitleContainerStyle={previewTitleContainerStyle}
+          previewTitleStyle={previewTitleStyle}
+          previewContentStyle={previewContentStyle}
+        />
       </div>
 
-      {/* Botón Generar Resultados */}
-      <div className="text-center mb-4">
-        <button
-          style={campaignA && campaignB ? buttonStyle : disabledButtonStyle}
-          onClick={generateResults}
-          disabled={!campaignA || !campaignB}
-        >
-          <FaChartBar style={{ marginRight: '8px' }} />
-          Generar resultado de la comparación
-        </button>
-      </div>
+      <ActionButtons 
+        isGeneratingResults={isGeneratingResults}
+        campaignASelected={!!campaignA}
+        campaignBSelected={!!campaignB}
+        testNameProvided={!!testName.trim()}
+        resultsAvailable={!!(testResults && showResults)}
+        onGenerate={generateResults}
+        onReset={handleResetTest}
+        buttonStyle={buttonStyle}
+        buttonHoverStyle={buttonHoverStyle}
+        disabledButtonStyle={disabledButtonStyle}
+      />
 
-      {/* Sección de resultados */}
-      <div id="results-section">
-        {showResults && testResults && (
-          <TestResultsDisplay
-            results={testResults}
-            campaignA={campaignA}
-            campaignB={campaignB}
-          />
-        )}
-      </div>
+      {showResults && testResults && (
+        <TestResultsDisplay
+          results={testResults}
+          campaignA={campaignA}
+          campaignB={campaignB}
+        />
+      )}
     </div>
   );
 };

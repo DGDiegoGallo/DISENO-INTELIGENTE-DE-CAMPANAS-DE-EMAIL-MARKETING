@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Swal from 'sweetalert2';
 import { FaArrowLeft, FaPen, FaEye, FaUsers } from 'react-icons/fa';
 import EmailEditorComponent from '../EmailEditor';
 import { Design } from '../../interfaces/emailEditor';
@@ -321,22 +322,39 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
       
       try {
         // Enviar los datos al servicio de campaña, que se encarga de formatearlos para Strapi
-        await campaignService.createCampaign(campaignPayload);
+        const strapiResponse = await campaignService.createCampaign(campaignPayload);
         
+        console.log('Campaña guardada con éxito en Strapi:', strapiResponse);
+        
+        Swal.fire({
+          title: '¡Éxito!',
+          text: 'Campaña enviada/programada con éxito.',
+          icon: 'success',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#F21A2B'
+        });
+
         setFormState({
           isLoading: false,
           error: null,
-          success: 'Campaña guardada correctamente'
+          success: null // Success message is now handled by Swal
         });
-        
-        // Desactivar el indicador de carga global
-        useLoadingStore.getState().stopLoading();
-        
-        // Limpiar localStorage después de una creación exitosa
+
+        // Limpiar el formulario y localStorage después de enviar
+        setCampaignData({
+          title: '',
+          subject: '',
+          contactGroup: '',
+          scheduledTime: '',
+          emailDesign: undefined,
+          emailHtml: ''
+        });
         localStorage.removeItem('currentCampaign');
-        
-        // Mostrar en consola los datos enviados para depuración
-        console.log('Campaña creada exitosamente con los siguientes contactos:', campaignPayload.contactos);
+        setPreviewHtml('');
+        setEmailsPreview('');
+
+        // Opcional: Volver a la vista anterior automáticamente
+        // onBack();
       } catch (error) {
         console.error('Error al guardar la campaña en Strapi:', error);
         

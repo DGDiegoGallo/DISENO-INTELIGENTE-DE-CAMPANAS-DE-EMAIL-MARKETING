@@ -4,46 +4,41 @@
  * Servicio para interactuar con la API de OpenAI a través de Strapi.
  */
 
-import { API_URL } from './strapiService';
+// import { API_URL } from './strapiService'; // No longer needed as AI_CHAT_ENDPOINT is hardcoded
 
-// URL de la API de Strapi para los chats con IA
-const AI_CHAT_ENDPOINT = `${API_URL}/api/open-ais`;
+// URL de la API de Strapi para el chat con IA (específico para chat-proyecto-56)
+const AI_CHAT_ENDPOINT = 'http://34.238.122.213:1337/api/open-ai/chat-proyecto-56';
 
 export interface ChatMessage {
-  type: string;
+  type: 'pregunta' | 'response'; // More specific types
   content: string;
 }
 
-export interface AIResponse {
-  id: number;
-  schema: { chat: ChatMessage[] };
-  prompt: string;
-  proyecto: string;
+// Interface for the raw response from the AI endpoint
+interface RawAIAPIResponse {
+  autos: {
+    chat: {
+      type: 'respuesta'; // As per Insomnia response
+      content: string;
+    }[];
+  }[];
 }
 
 /**
  * Envía un mensaje al chat de IA y obtiene una respuesta
  * @param mensaje - Mensaje del usuario
- * @param historial - Historial de mensajes previos (opcional)
- * @returns Promise con la respuesta de la IA
+ * @returns Promise con el contenido de la respuesta de la IA (string)
  */
 export const sendMessageToAI = async (
-  mensaje: string, 
-  historial: ChatMessage[] = []
-): Promise<AIResponse> => {
+  mensaje: string
+): Promise<string> => {
   try {
-    // Crear un nuevo historial con el mensaje del usuario
-    const newChat = [
-      ...historial,
-      { type: "pregunta", content: mensaje }
-    ];
-    
-    // Prepare los datos para enviar a la API
+    // Prepare los datos para enviar a la API, según la prueba de Insomnia
     const requestData = {
       data: {
-        schema: { chat: newChat },
-        prompt: "Eres un asistente virtual especializado en marketing por email para una plataforma CRM. Proporciona respuestas concisas, profesionales y útiles sobre campañas de email marketing, segmentación de audiencias, métricas de rendimiento, mejores prácticas, optimización de tasas de apertura y conversión, y estrategias para evitar filtros de spam. Mantén tus respuestas enfocadas en el marketing por email y ayuda a resolver problemas técnicos relacionados con la plataforma de email marketing.",
-        proyecto: "chat-proyecto-56",
+        chat: [
+          { type: "pregunta", content: mensaje }
+        ]
       }
     };
     
@@ -55,67 +50,69 @@ export const sendMessageToAI = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        // Asegúrate de que tu endpoint requiera autenticación si envías el token.
+        // Si el endpoint es público o usa otra auth, ajusta esto.
+        ...(token && { 'Authorization': `Bearer ${token}` }),
       },
       body: JSON.stringify(requestData),
     });
     
     if (!response.ok) {
-      throw new Error(`Error en la API de chat: ${response.status}`);
+      const errorData = await response.json().catch(() => ({ message: 'Error desconocido en la API de chat' }));
+      console.error('API Error Response:', errorData);
+      throw new Error(`Error en la API de chat: ${response.status} - ${errorData.error?.message || response.statusText}`);
     }
     
-    const data = await response.json();
+    const data: RawAIAPIResponse = await response.json();
     
-    // Procesar la respuesta de la API
-    // En una implementación real, la respuesta vendría directamente de la API
-    // Aquí simulamos una respuesta mientras se integra completamente
-    const aiResponse = {
-      ...data.data,
-      schema: {
-        chat: [
-          ...newChat,
-          { 
-            type: "response", 
-            content: "¡Hola! Soy tu asistente virtual de Email Marketing. ¿En qué puedo ayudarte hoy con tus campañas de email?" 
-          }
-        ]
-      }
-    };
-    
-    return aiResponse;
+    // Extraer el contenido de la respuesta de la IA según la estructura de Insomnia
+    if (data.autos && data.autos[0] && data.autos[0].chat && data.autos[0].chat[0] && data.autos[0].chat[0].content) {
+      return data.autos[0].chat[0].content;
+    } else {
+      console.error('Respuesta inesperada de la API de IA:', data);
+      throw new Error('Respuesta inesperada de la API de IA: formato no reconocido.');
+    }
   } catch (error) {
     console.error('Error al comunicarse con la API de OpenAI:', error);
-    throw error;
+    // Asegurarse de que el error que se propaga es una instancia de Error
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Error desconocido al procesar la solicitud de IA.');
   }
 };
 
 /**
  * Obtiene todas las conversaciones de chat
+ * @TODO: This function needs to be updated if chat history fetching is required,
+ * as the AIResponse type and potentially the endpoint/response structure have changed.
+ * Commenting out for now to resolve lint errors and focus on sendMessageToAI.
  */
-export const getChatHistory = async (): Promise<AIResponse[]> => {
-  try {
-    const token = localStorage.getItem('jwt');
+// export const getChatHistory = async (): Promise<AIResponse[]> => {
+//   try {
+//     const token = localStorage.getItem('jwt');
     
-    const response = await fetch(`${AI_CHAT_ENDPOINT}?populate=*`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+//     const response = await fetch(`${AI_CHAT_ENDPOINT}?populate=*`, { // Note: AI_CHAT_ENDPOINT here might need to be different for history
+//       method: 'GET',
+//       headers: {
+//         ...(token && { 'Authorization': `Bearer ${token}` }),
+//       },
+//     });
     
-    if (!response.ok) {
-      throw new Error(`Error al obtener historial de chat: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`Error al obtener historial de chat: ${response.status}`);
+//     }
     
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
-    console.error('Error al obtener historial de chat:', error);
-    return [];
-  }
-};
+//     const data = await response.json();
+//     // Ensure data.data matches the expected structure for chat history entries.
+//     return data.data; 
+//   } catch (error) {
+//     console.error('Error al obtener historial de chat:', error);
+//     return [];
+//   }
+// };
 
 export default {
   sendMessageToAI,
-  getChatHistory
+  // getChatHistory // Commented out as the function is currently commented out
 };

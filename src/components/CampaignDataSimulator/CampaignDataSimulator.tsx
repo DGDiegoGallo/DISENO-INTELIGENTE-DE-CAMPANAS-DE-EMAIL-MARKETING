@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Alert, Spinner, Card, ProgressBar } from 'react-bootstrap';
-import { FaRandom, FaSync } from 'react-icons/fa';
+import { Button, Alert, Spinner, ProgressBar } from 'react-bootstrap';
+import { FaSync } from 'react-icons/fa';
 import strapiService from '../../services/strapiService';
 import { Campaign as BaseCampaign } from '../../services/campaignService';
 import { extractStrapiData } from '../../interfaces/strapi';
@@ -320,83 +320,58 @@ const CampaignDataSimulator: React.FC = () => {
   };
 
   return (
-    <Card className="shadow-sm mb-4">
-      <Card.Header className="bg-white">
-        <h5 className="mb-0 d-flex align-items-center">
-          <FaRandom className="me-2 text-danger" />
-          Simulador de Datos de Campaña
-        </h5>
-      </Card.Header>
-      <Card.Body>
-        <p className="text-muted">
-          Esta herramienta genera datos aleatorios de interacción para tus campañas <strong>ya enviadas</strong>.
-          Actualiza los siguientes campos:
-        </p>
-        <ul className="small text-muted">
-          <li><strong>interaccion_destinatario</strong>: Datos de clicks, aperturas, etc.</li>
-          <li><strong>se_registro_en_pagina</strong>: Si algún destinatario se registró</li>
-          <li><strong>dinero_gastado</strong>: Total gastado por destinatarios</li>
-        </ul>
-        <div className="alert alert-info mt-2 p-2 small">
-          <strong>Nota:</strong> Solo se pueden generar datos para campañas cuya fecha programada ya haya pasado.
-          Las campañas con fechas futuras no serán procesadas.
-        </div>
-
-        {status.message && (
-          <Alert variant={status.type} className="mb-3">
-            {status.message}
-            {status.details && (
-              <div className="small mt-1">{status.details}</div>
-            )}
-          </Alert>
-        )}
-
-        {isLoading && progress > 0 && (
-          <div className="mb-3">
-            <ProgressBar 
-              now={progress} 
-              label={`${progress}%`} 
-              variant="danger" 
-              className="mb-2" 
-            />
-            <div className="d-flex justify-content-between text-muted small">
-              <span>Procesadas: {processedCampaigns.success + processedCampaigns.failed}/{processedCampaigns.total}</span>
-              <span>Exitosas: {processedCampaigns.success}</span>
-              <span>Fallidas: {processedCampaigns.failed}</span>
-            </div>
-          </div>
-        )}
-
-        <Button 
-          variant="danger" 
-          onClick={updateCampaignsData} 
-          disabled={isLoading}
-          className="d-flex align-items-center"
-        >
-          {isLoading ? (
-            <>
-              <Spinner 
-                as="span" 
-                animation="border" 
-                size="sm" 
-                role="status" 
-                aria-hidden="true" 
-                className="me-2" 
-              />
-              Actualizando datos...
-            </>
-          ) : (
-            <>
-              <FaSync className="me-2" /> Generar Datos Aleatorios
-            </>
+    <div className="mb-4">
+      {status.message && (
+        <Alert variant={status.type} className="mb-3">
+          {status.message}
+          {status.details && (
+            <div className="small mt-1">{status.details}</div>
           )}
-        </Button>
-      </Card.Body>
-      <Card.Footer className="bg-white text-muted small">
-        <strong>Nota:</strong> Esto sobrescribirá cualquier dato existente en las campañas seleccionadas.
-        Los datos generados son aleatorios y solo para fines de demostración.
-      </Card.Footer>
-    </Card>
+        </Alert>
+      )}
+
+      {isLoading && progress > 0 && (
+        <div className="mb-3">
+          <ProgressBar
+            now={progress}
+            label={`${progress}%`}
+            variant="danger"
+            className="mb-2"
+          />
+          <div className="d-flex justify-content-between text-muted small">
+            <span>Procesadas: {processedCampaigns.success + processedCampaigns.failed}/{processedCampaigns.total}</span>
+            <span>Exitosas: {processedCampaigns.success}</span>
+            <span>Fallidas: {processedCampaigns.failed}</span>
+          </div>
+        </div>
+      )}
+
+      <Button
+        variant="danger"
+        onClick={updateCampaignsData}
+        disabled={isLoading}
+        className="d-flex align-items-center"
+      >
+        {isLoading ? (
+          <>
+            <Spinner
+              as="span"
+              animation="border"
+              size="sm"
+              role="status"
+              aria-hidden="true"
+              className="me-2"
+            />
+            Actualizando datos...
+          </>
+        ) : (
+          <>
+            <FaSync className="me-2" />
+            Actualizar Datos
+          </>
+        )}
+      </Button>
+    </div>
   );
 };
 

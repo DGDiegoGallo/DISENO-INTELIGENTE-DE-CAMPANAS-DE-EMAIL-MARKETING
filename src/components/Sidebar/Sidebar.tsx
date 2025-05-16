@@ -7,11 +7,8 @@ import {
   FaFlask, 
   FaChartBar, 
   FaGraduationCap, 
-  FaLightbulb, 
-  FaUserFriends, 
   FaHeadset,
   FaSignOutAlt,
-  FaEnvelope,
   FaUser
 } from 'react-icons/fa';
 import authService from '../../services/auth/authService';
@@ -179,40 +176,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
           <FaGraduationCap style={{...iconStyle, ...(activeView === 'Capacitacion' ? activeIconStyle : {})}} /> Capacitación
         </div>
         
-        <div 
-          style={{...navItemStyle, ...(activeView === 'Recomendacion' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('Recomendacion', e)}
-        >
-          <FaLightbulb style={{...iconStyle, ...(activeView === 'Recomendacion' ? activeIconStyle : {})}} />
-          <span style={twoLineTextStyle}>
-            <span>Recomendación</span>
-            <span>de campaña</span>
-          </span>
-        </div>
-        
-        <div 
-          style={{...navItemStyle, ...(activeView === 'Segmentacion' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('Segmentacion', e)}
-        >
-          <FaUserFriends style={{...iconStyle, ...(activeView === 'Segmentacion' ? activeIconStyle : {})}} />
-          <span style={twoLineTextStyle}>
-            <span>Segmentación</span>
-            <span>de campañas</span>
-          </span>
-        </div>
         
         <div 
           style={{...navItemStyle, ...(activeView === 'Soporte' ? activeNavItemStyle : {})}} 
           onClick={(e) => handleNavClick('Soporte', e)}
         >
           <FaHeadset style={{...iconStyle, ...(activeView === 'Soporte' ? activeIconStyle : {})}} /> Soporte
-        </div>
-        
-        <div 
-          style={{...navItemStyle, ...(activeView === 'VerificacionEmail' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('VerificacionEmail', e)}
-        >
-          <FaEnvelope style={{...iconStyle, ...(activeView === 'VerificacionEmail' ? activeIconStyle : {})}} /> Verificación Email
         </div>
 
         {/* Acceso a Admin solo para rol admin */}

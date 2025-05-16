@@ -1,20 +1,11 @@
 import { create } from 'zustand';
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  nombre?: string;
-  apellido?: string;
-  avatar?: string | null;
-  rol?: string;
-}
+import { StrapiUser } from '@/interfaces/user';
 
 interface AuthState {
-  user: User | null;
+  user: StrapiUser | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (userData: { user: User; token: string }) => boolean;
+  login: (userData: { user: StrapiUser; token: string }) => boolean;
   logout: () => void;
   checkAuth: () => boolean;
 }
@@ -78,14 +69,10 @@ const useUserStore = create<AuthState>()((set, get) => ({
   
   // Cerrar sesión
   logout: () => {
-    // Limpiar todas las claves relacionadas con la autenticación
-    localStorage.removeItem('auth_user');
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth-storage');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Limpiar todo el localStorage
+    localStorage.clear();
     
-    console.log('Todas las claves de autenticación eliminadas');
+    console.log('LocalStorage completamente limpiado al cerrar sesión.');
     
     // Restablecer estado
     set({

@@ -65,22 +65,27 @@ const LandingPage: React.FC = () => {
         title="Conecta con tus clientes, porque cada correo puede marcar la diferencia"
         description="Nuestra plataforma utiliza inteligencia artificial para gestionar y optimizar tus campañas de correo electrónico, analizando datos del CRM para convertir leads en clientes de manera eficiente."
         buttonText="Comenzar"
-        onButtonClick={handleButtonClick} 
       />
-      <Features 
-        mainTitle="¿Cansado de tomar decisiones basadas en intuición?"
-        mainDescription="Nuestra interfaz intuitiva te permite aprovechar el poder de la IA sin necesidad de ser un experto. Descubre nuestras herramientas:"
-        features={features}
-      />
-      <Benefits 
-        title={`Optimiza tus campañas
+      <div id="caracteristicas">
+        <Features 
+          mainTitle="¿Cansado de tomar decisiones basadas en intuición?"
+          mainDescription="Nuestra interfaz intuitiva te permite aprovechar el poder de la IA sin necesidad de ser un experto. Descubre nuestras herramientas:"
+          features={features}
+        />
+      </div>
+      <div id="beneficios">
+        <Benefits 
+          title={`Optimiza tus campañas
 y ahorra tiempo`}
-        benefits={benefits}
-      />
-      <IntegrationPartners 
-        partners={partners} 
-        title="Conecta tus herramientas favoritas" 
-      />
+          benefits={benefits}
+        />
+      </div>
+      <div id="integraciones">
+        <IntegrationPartners 
+          partners={partners} 
+          title="Conecta tus herramientas favoritas" 
+        />
+      </div>
       <CallToAction 
         title={`Automatiza, personaliza y
 conquista: tu nueva manera de

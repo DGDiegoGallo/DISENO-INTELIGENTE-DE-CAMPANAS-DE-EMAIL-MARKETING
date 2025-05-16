@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import ModalWrapper from './ModalWrapper';
 import { FaPlus } from 'react-icons/fa';
 import CreateGroupModal from './CreateGroupModal';
@@ -65,6 +66,14 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ isOpen, onClose, onSu
     
     // Enviamos los datos del nuevo contacto
     onSubmit(name, email, phone, group);
+
+    Swal.fire({
+      title: '¡Éxito!',
+      text: 'Contacto añadido correctamente.',
+      icon: 'success',
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#F21A2B'
+    });
     
     // Limpiamos los campos
     setName('');

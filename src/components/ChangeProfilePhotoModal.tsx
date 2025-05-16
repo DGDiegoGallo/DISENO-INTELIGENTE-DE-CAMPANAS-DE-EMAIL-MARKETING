@@ -79,7 +79,10 @@ const ChangeProfilePhotoModal: React.FC<ChangeProfilePhotoModalProps> = ({ show,
           };
           
           login({
-            user: updatedUser,
+            user: {
+              ...updatedUser,
+              avatar: updatedUser.avatar === null ? undefined : updatedUser.avatar,
+            },
             token: localStorage.getItem('token') || ''
           });
           

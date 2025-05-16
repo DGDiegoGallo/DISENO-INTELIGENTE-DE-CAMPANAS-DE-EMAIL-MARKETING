@@ -82,7 +82,7 @@ export const getCrmContacts = async (): Promise<CrmAnalysisContact[]> => {
       ? campaigns.filter(campaign => {
           // Verificar si el campaign.usuario es un objeto o un ID
           const userId = typeof campaign.usuario === 'object' 
-            ? campaign.usuario?.id 
+            ? campaign.usuario?.data?.id 
             : campaign.usuario;
           return userId === currentUserId;
         })

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { Button, Spinner, Modal, ProgressBar } from 'react-bootstrap';
-import { FaFilePdf, FaChartBar, FaCheck, FaInfoCircle, FaCaretUp } from 'react-icons/fa';
+import { FaFilePdf, FaChartBar, FaCheck, FaInfoCircle } from 'react-icons/fa';
 import useUserStore from '../store/useUserStore';
 import Chart from 'chart.js/auto';
 import { ABTest } from '../services/abTestingService';
@@ -11,6 +11,9 @@ import { ABTest } from '../services/abTestingService';
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: Record<string, unknown>) => jsPDF;
+    lastAutoTable: {
+      finalY: number;
+    };
   }
 }
 
@@ -87,7 +90,14 @@ const ABTestReportGenerator: React.FC<ABTestReportGeneratorProps> = ({
               tooltip: {
                 callbacks: {
                   label: function(context) {
-                    return `${context.raw.toFixed(2)}%`;
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                      label += `${(context.raw as number).toFixed(2)}%`;
+                    }
+                    return label;
                   }
                 }
               }
@@ -143,7 +153,14 @@ const ABTestReportGenerator: React.FC<ABTestReportGeneratorProps> = ({
               tooltip: {
                 callbacks: {
                   label: function(context) {
-                    return `${context.raw.toFixed(2)}%`;
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                      label += `${(context.raw as number).toFixed(2)}%`;
+                    }
+                    return label;
                   }
                 }
               }
@@ -199,7 +216,14 @@ const ABTestReportGenerator: React.FC<ABTestReportGeneratorProps> = ({
               tooltip: {
                 callbacks: {
                   label: function(context) {
-                    return `${context.raw.toFixed(2)}%`;
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                      label += `${(context.raw as number).toFixed(2)}%`;
+                    }
+                    return label;
                   }
                 }
               }
@@ -563,45 +587,7 @@ const ABTestReportGenerator: React.FC<ABTestReportGeneratorProps> = ({
                     </div>
                     
                     <div className="alert alert-light mt-3">
-                      <h6>Análisis Comparativo:</h6>
-                      <p>
-                        <strong>Tasa de apertura:</strong> {' '}
-                        {(testData.results.groupA.opened / testData.results.groupA.sent) > 
-                         (testData.results.groupB.opened / testData.results.groupB.sent) ? (
-                          <span className="text-success">
-                            <FaCaretUp /> El Grupo A tiene mejor tasa de apertura
-                          </span>
-                        ) : (
-                          <span className="text-success">
-                            <FaCaretUp /> El Grupo B tiene mejor tasa de apertura
-                          </span>
-                        )}
-                      </p>
-                      <p>
-                        <strong>Tasa de clics:</strong> {' '}
-                        {(testData.results.groupA.clicked / testData.results.groupA.opened) > 
-                         (testData.results.groupB.clicked / testData.results.groupB.opened) ? (
-                          <span className="text-success">
-                            <FaCaretUp /> El Grupo A tiene mejor tasa de clics
-                          </span>
-                        ) : (
-                          <span className="text-success">
-                            <FaCaretUp /> El Grupo B tiene mejor tasa de clics
-                          </span>
-                        )}
-                      </p>
-                      <p>
-                        <strong>Ingresos generados:</strong> {' '}
-                        {testData.results.groupA.revenue > testData.results.groupB.revenue ? (
-                          <span className="text-success">
-                            <FaCaretUp /> El Grupo A generó más ingresos
-                          </span>
-                        ) : (
-                          <span className="text-success">
-                            <FaCaretUp /> El Grupo B generó más ingresos
-                          </span>
-                        )}
-                      </p>
+                      <p className="mb-0">El informe incluirá un análisis detallado de los resultados de la prueba A/B, gráficos comparativos y recomendaciones basadas en los datos.</p>
                     </div>
                   </div>
                 </div>

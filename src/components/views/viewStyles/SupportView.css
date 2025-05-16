@@ -1,11 +1,17 @@
 /* Estilos complementarios para el chat de soporte con Bootstrap */
 
 /* Animación para los puntos de carga */
+.loading-dots {
+  display: inline-flex; /* Align container like inline text */
+  align-items: baseline; /* Align dots to baseline */
+}
+
 .loading-dots span {
   animation: pulse 1.4s infinite;
   animation-fill-mode: both;
-  margin-right: 2px;
-  font-size: 24px;
+  margin-right: 2px; /* Spacing between dots */
+  font-size: 18px; /* Adjusted size for consistency */
+  line-height: 1; /* Ensure compact vertical spacing */
 }
 
 .loading-dots span:nth-child(2) {

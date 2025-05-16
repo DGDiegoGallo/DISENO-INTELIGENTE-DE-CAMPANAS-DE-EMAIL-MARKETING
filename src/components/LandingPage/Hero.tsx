@@ -1,19 +1,34 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import useUserStore from '../../store/useUserStore';
 import heroImage from '../../assets/images/img_hero 1.png';
+
+interface UserState {
+  isAuthenticated: boolean;
+}
 
 interface HeroProps {
   title: string;
   description: string;
   buttonText: string;
-  onButtonClick?: () => void;
 }
 
 const Hero: React.FC<HeroProps> = ({ 
   title = "Conecta con tus clientes, porque cada correo puede marcar la diferencia",
   description = "Nuestra plataforma utiliza inteligencia artificial para gestionar y optimizar tus campañas de correo electrónico, analizando datos del CRM para convertir leads en clientes de manera eficiente.",
   buttonText = "Comenzar",
-  onButtonClick = () => {}
 }) => {
+  const navigate = useNavigate();
+  const isAuthenticated = useUserStore((state: UserState) => state.isAuthenticated);
+
+  const handleRedirect = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="landing-section d-flex flex-column align-items-center justify-content-center text-white"
          style={{
@@ -31,7 +46,7 @@ const Hero: React.FC<HeroProps> = ({
             <button 
               className="btn btn-lg px-5 py-3" 
               style={{ backgroundColor: '#E84C24', color: 'white' }}
-              onClick={onButtonClick}
+              onClick={handleRedirect}
             >
               {buttonText}
             </button>

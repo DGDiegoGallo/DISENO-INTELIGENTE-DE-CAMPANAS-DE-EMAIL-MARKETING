@@ -5,59 +5,67 @@ const API_URL = 'http://34.238.122.213:1337';
 // Interfaz para las campañas en el formato que viene de Strapi
 export interface CampaignData {
   id: number;
-  attributes: {
+  documentId?: string;
+  nombre: string;
+  Fechas: string;
+  estado: 'borrador' | 'programado' | 'enviado' | 'cancelado';
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  asunto: string;
+  contenidoHTML: string | null;
+  contactos: string;
+  gruposdecontactosJSON?: {
+    grupos: Array<{
+      id: string;
+      nombre: string;
+      contactos: Array<{
+        nombre: string;
+        email: string;
+        telefono: string;
+      }>;
+    }>;
+  };
+  interaccion_destinatario?: {
+    [key: string]: { // email address with '.' replaced by '_'
+      clicks: number;
+      opens: number;
+      dinero_gastado: number;
+      se_registro_en_pagina: boolean;
+    };
+  } | null;
+  se_registro_en_pagina?: boolean | null;
+  dinero_gastado?: string | null;
+  campanaJSON?: Record<string, unknown> | null;
+  email_destinatario?: Record<string, unknown> | null;
+  usuario: {
+    id: number;
     documentId?: string;
-    nombre: string;
-    Fechas: string;
-    estado: 'borrador' | 'programado' | 'enviado' | 'cancelado';
+    username: string;
+    email: string;
+    provider: string;
+    confirmed: boolean;
+    blocked: boolean;
     createdAt: string;
     updatedAt: string;
-    publishedAt: string;
-    asunto: string;
-    contenidoHTML: string | null; // Puede ser null o un string con HTML
-    contactos: string;
-    gruposdecontactosJSON?: {
-      grupos: Array<{
-        id: string;
-        nombre: string;
-        contactos: Array<{
-          nombre: string;
-          email: string;
-          telefono: string;
-        }>;
-      }>;
-    };
-    interaccion_destinatario?: Record<string, unknown> | null; // Puede ser null o un objeto con datos de interacción
-    se_registro_en_pagina?: boolean | null;
-    dinero_gastado?: string | null;
-    campanaJSON?: Record<string, unknown> | null; // Puede ser null o un objeto con el diseño de la campaña
-    email_destinatario?: Record<string, unknown> | null; // Puede ser null o un objeto con datos del destinatario
-    usuario: {
-      data: {
-        id: number;
-        attributes: {
-          username: string;
-          email: string;
-          provider: string;
-          confirmed: boolean;
-          blocked: boolean;
-          createdAt: string;
-          updatedAt: string;
-          nombre: string;
-          apellido: string;
-          sexo?: string;
-          edad?: number;
-          fechaDeNacimiento?: string;
-          pais?: string;
-          ciudad?: string;
-          domicilio?: string;
-          telefono?: string;
-          avatar?: string;
-          rol?: string;
-        };
-      };
-    };
+    publishedAt?: string;
+    nombre: string;
+    apellido: string;
+    sexo?: string;
+    edad?: number;
+    fechaDeNacimiento?: string;
+    pais?: string;
+    ciudad?: string;
+    domicilio?: string;
+    telefono?: string;
+    avatar?: string | null;
+    rol?: string;
   };
+}
+
+export interface ContactGroup {
+  name: string;
+  contactCount: number;
 }
 
 export interface UserCampaignsData {
@@ -101,14 +109,17 @@ const reportService = {
       );
 
       if (!response.ok) {
-        throw new Error('Error al obtener datos de campañas');
+        const errorBody = await response.text();
+        console.error('Error API - Status:', response.status, response.statusText);
+        console.error('Error API - Body:', errorBody);
+        throw new Error(`Error al obtener datos de campañas: ${response.status} ${response.statusText}. Cuerpo: ${errorBody}`);
       }
 
       const data = await response.json();
-      const campaigns = data.data || [];
+      const campaigns = data && data.data ? data.data : [];
       
       // Procesar datos para el informe
-      const contactGroups: { name: string; contactCount: number }[] = [];
+      const contactGroups: ContactGroup[] = [];
       let totalContacts = 0;
       
       // Estadísticas de campañas por estado
@@ -120,9 +131,14 @@ const reportService = {
       };
       
       // Procesar cada campaña para extraer información
-      campaigns.forEach((campaign: CampaignData) => {
+      campaigns.forEach((campaign: CampaignData, index: number) => {
+        if (!campaign || !campaign.id) { // Check for a core property like id
+          console.warn(`Campaña en el índice ${index} es inválida o nula:`, campaign);
+          return; // Saltar esta campaña si es inválida
+        }
+
         // Contar campañas por estado
-        switch (campaign.attributes.estado) {
+        switch (campaign.estado) {
           case 'borrador':
             campaignStats.draft++;
             break;
@@ -138,8 +154,8 @@ const reportService = {
         }
         
         // Procesar grupos de contactos
-        if (campaign.attributes.gruposdecontactosJSON && campaign.attributes.gruposdecontactosJSON.grupos) {
-          campaign.attributes.gruposdecontactosJSON.grupos.forEach((grupo: {
+        if (campaign.gruposdecontactosJSON && campaign.gruposdecontactosJSON.grupos) {
+          campaign.gruposdecontactosJSON.grupos.forEach((grupo: {
             id: string;
             nombre: string;
             contactos: Array<{
@@ -176,7 +192,12 @@ const reportService = {
         campaignStats
       };
     } catch (error) {
-      console.error('Error al obtener campañas del usuario:', error);
+      console.error('Error detallado en getUserCampaigns para userId:', userId, error);
+      if (error instanceof Error) {
+        console.error('Mensaje de Error:', error.message);
+        console.error('Stack de Error:', error.stack);
+      }
+      console.error('Token que se intentó usar:', localStorage.getItem('token'));
       throw error;
     }
   }

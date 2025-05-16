@@ -14,7 +14,7 @@ const SupportView: React.FC = () => {
   useEffect(() => {
     setMessages([
       { 
-        type: 'response', 
+        type: 'response' as const, // Use 'as const' for literal type assertion 
         content: '¡Hola! Soy tu asistente virtual de Email Marketing. ¿Cómo puedo ayudarte hoy?' 
       }
     ]);
@@ -31,42 +31,34 @@ const SupportView: React.FC = () => {
     if (!inputMessage.trim()) return;
     
     // Agregar mensaje del usuario a la conversación
-    const userMessage = { type: 'pregunta', content: inputMessage.trim() };
+    const userMessage: ChatMessage = { type: 'pregunta', content: inputMessage.trim() };
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
 
     try {
-      // Llamar al servicio de OpenAI
-      const response = await sendMessageToAI(inputMessage, messages);
+      // Llamar al servicio de OpenAI (ahora solo toma el mensaje del usuario)
+      const aiContentString = await sendMessageToAI(inputMessage.trim());
       
-      // Verificar la estructura de la respuesta y extraer la parte relevante
-      // Crear un objeto compatible con el tipo ChatMessage
-      // Definir un tipo para la posible estructura de la respuesta
-      interface ExtendedResponse {
-        message?: string;
-        content?: string;
-        chat?: Array<{content: string}>;
-      }
-      
-      const aiResponse: ChatMessage = { 
-        type: 'response', 
-        content: typeof response === 'string' ? response : 
-                 ((response as ExtendedResponse).message || 
-                  (response as ExtendedResponse).content || 
-                  (response as ExtendedResponse).chat?.[((response as ExtendedResponse).chat?.length || 1) - 1]?.content || 
-                  'Lo siento, no pude procesar correctamente la respuesta.')
+      // Crear el objeto de mensaje de la IA con el contenido recibido
+      const aiResponseMessage: ChatMessage = { 
+        type: 'response',
+        content: aiContentString
       };
       
       // Añadir respuesta a los mensajes
-      setMessages(prev => [...prev, aiResponse]);
-    } catch (error) {
-      console.error('Error al obtener respuesta:', error);
-      setMessages(prev => [
-        ...prev, 
-        { 
-          type: 'response', 
-          content: 'Lo siento, ha ocurrido un error al procesar tu consulta. Por favor, intenta nuevamente.' 
+      setMessages(prevMessages => [...prevMessages, aiResponseMessage]);
+    } catch (err) { // Changed 'error' to 'err' to avoid conflict with global Error object if any
+      let displayErrorMessage = 'Lo siento, ha ocurrido un error al procesar tu consulta. Por favor, intenta nuevamente.';
+      if (err instanceof Error) {
+        displayErrorMessage = err.message; 
+      }
+      console.error('Error al obtener respuesta de IA:', err);
+      setMessages(prevMessages => [
+        ...prevMessages, 
+        {
+          type: 'response' as const, 
+          content: displayErrorMessage
         }
       ]);
     } finally {
@@ -119,7 +111,14 @@ const SupportView: React.FC = () => {
                 ))}
                 
                 {isLoading && (
-                  <div className="message-bubble p-3 mb-3 rounded bg-primary text-white" style={{ maxWidth: '80%' }}>
+                  <div 
+                    className="message-bubble p-3 mb-3 rounded ai-message bg-primary text-white" 
+                    style={{ 
+                      maxWidth: '80%', 
+                      float: 'left', // Align like other AI messages
+                      clear: 'both' 
+                    }}
+                  >
                     <LoadingDots />
                   </div>
                 )}

@@ -11,12 +11,12 @@ import CreateCampaignView from '../components/views/CreateCampaignView';
 import ContactView from '../components/views/ContactView';
 import MetricsView from '../components/views/MetricsView';
 import TrainingView from '../components/views/TrainingView'; // Importar la vista real de Capacitación
-import RecommendationView from '../components/views/RecommendationView'; // Importar la nueva vista de Recomendación
-import SegmentationView from '../components/views/SegmentationView'; // Importar la nueva vista de Segmentación de campañas
+
 import SupportView from '../components/views/SupportView'; // Importar la nueva vista de Soporte con IA
 import ProfileView from '../components/views/ProfileView'; // Importar la vista de perfil de usuario
-import ABTestingListView from '../components/views/ABTestingListView'; // Importar la vista de lista de Pruebas A/B
-import CreateABTestView from '../components/views/ABTesting/CreateABTestView'; // Importar la vista de creación de Pruebas A/B
+// ABTestingListView import removed
+import ABTestingView from '../components/views/ABTestingView'; // Import for the main A/B testing container view
+// CreateABTestView import removed as it's now handled by ABTestingView
 import CrmAnalysisView from '../components/views/CrmAnalysis/CrmAnalysisView'; // Importar la vista de Análisis CRM
 import AdminView from '../components/views/AdminView/AdminView'; // Importar la vista de Administración
 
@@ -167,20 +167,16 @@ function Dashboard() {
         return <MetricsView />;
       case 'Capacitacion': 
         return <TrainingView />;
-      case 'Recomendacion': 
-        return <RecommendationView />;
-      case 'Segmentacion': 
-        return <SegmentationView />;
+      
       case 'Soporte': 
         return <SupportView />;
       case 'Perfil':
         return <ProfileView />;
       case 'Datos CRM':
         return <CrmAnalysisView />;
-      case 'Pruebas A/B':
-        return <ABTestingListView onNavigate={handleViewChange} />;
-      case 'Crear pruebas A/B':
-        return <CreateABTestView onNavigate={handleViewChange} />;
+      case 'Pruebas A/B': // Now renders the main ABTestingView which contains CreateABTestView
+        return <ABTestingView />;
+      // 'Crear pruebas A/B' case removed as ABTestingView is now the sole entry point
       case 'Administracion':
         return <AdminView />;
       default:
