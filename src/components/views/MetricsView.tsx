@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Button, Spinner, Alert } from 'react-bootstrap';
+import { Button, Spinner, Alert, Modal } from 'react-bootstrap';
 import { FaFilePdf } from 'react-icons/fa';
 import useUserStore from '../../store/useUserStore';
 import reportService, { UserCampaignsData } from '../../services/reportService';
@@ -8,7 +8,7 @@ import reportService, { UserCampaignsData } from '../../services/reportService';
 import ReportUserInfo from '../reports/ReportUserInfo';
 import ReportCampaignSummary from '../reports/ReportCampaignSummary';
 import ReportCharts from '../reports/ReportCharts';
-import ReportPDFGenerator, { ReportPDFGeneratorRef } from '../reports/ReportPDFGenerator';
+import ReportPDFGenerator, { ReportPDFGeneratorRef, ABTestData } from '../reports/ReportPDFGenerator'; // Import ABTestData
 import AiRecommendations from '../AiRecommendations'; // Added import
 
 const MetricsView: React.FC = () => {
@@ -17,6 +17,8 @@ const MetricsView: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<UserCampaignsData | null>(null); // Holds data for preview and PDF
+  const [abTestData, setAbTestData] = useState<ABTestData[] | undefined>(undefined); // State for A/B test data
+  const [showNoCampaignsModal, setShowNoCampaignsModal] = useState(false);
   
   // Usuario actual desde el store
   const { user } = useUserStore();
@@ -42,6 +44,24 @@ const MetricsView: React.FC = () => {
       setProgress(50);
       const userData = await reportService.getUserCampaigns(user.id);
       setReportData(userData);
+
+      if (userData && (userData.campaigns.length === 0 || userData.totalCampaigns === 0)) {
+        setShowNoCampaignsModal(true);
+      }
+
+      // Load A/B test data from localStorage
+      try {
+        const abTestsString = localStorage.getItem('email_marketing_ab_tests');
+        if (abTestsString) {
+          const parsedAbTests: ABTestData[] = JSON.parse(abTestsString);
+          setAbTestData(parsedAbTests);
+        } else {
+          setAbTestData(undefined); // Or an empty array: []
+        }
+      } catch (e) {
+        console.warn('Error parsing A/B test data from localStorage:', e);
+        setAbTestData(undefined); // Or an empty array on error
+      }
       
       setProgress(100);
       setIsLoading(false);
@@ -121,7 +141,7 @@ const MetricsView: React.FC = () => {
           <Button
             variant="danger"
             onClick={reportData ? handleGeneratePDF : loadReportData}
-            disabled={isLoading}
+            disabled={isLoading || (reportData !== null && reportData.campaigns.length === 0)}
             size="lg"
             className="px-4 py-2"
           >
@@ -165,7 +185,7 @@ const MetricsView: React.FC = () => {
         )}
 
         {/* Vista previa del informe (visible cuando los datos están cargados y no se está procesando nada) */}
-        {reportData && !isLoading && (
+        {reportData && reportData.campaigns.length > 0 && !isLoading && (
           <div className="report-preview mt-4 p-3 border rounded bg-light">
             <h4 className="mb-3 text-center text-secondary">Vista Previa del Informe</h4>
             <ReportUserInfo user={user} />
@@ -201,8 +221,25 @@ const MetricsView: React.FC = () => {
             campaignChartRef,
             contactsChartRef
           }}
+          abTests={abTestData} // Pass A/B test data as a prop
         />
       </div>
+
+      {/* Modal for no campaigns */}
+      <Modal show={showNoCampaignsModal} onHide={() => setShowNoCampaignsModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>No hay campañas para analizar</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Necesitas al menos una campaña creada para generar un informe de rendimiento.</p>
+          <p>Por favor, crea una campaña y luego vuelve a esta sección para ver tus métricas.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowNoCampaignsModal(false)}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

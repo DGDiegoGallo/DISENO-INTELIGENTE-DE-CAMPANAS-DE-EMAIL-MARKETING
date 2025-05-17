@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Row, Col, Alert } from 'react-bootstrap';
 import Iniciodesign from './InicioView/Iniciodesign';
+import TutorialView from './Tutorialview'; // Import the new TutorialView
 import Iniciocharts from './InicioView/Iniciocharts';
 import useAuth from '../../hooks/useAuth';
 import campaignService from '../../services/campaignService'; // No-op change, re-saving
@@ -66,11 +67,9 @@ const InicioView: React.FC = () => {
       setTotalOpens(aggOpens);
       setTotalDineroGastado(aggDinero);
 
-      if (processedData.length === 0) {
-        setDataLoadedMsg('No se encontraron campañas para mostrar.');
-      } else {
-        setDataLoadedMsg(''); 
-      }
+      // If campaigns are successfully fetched (even if empty), clear any previous non-error messages.
+      // Iniciodesign.tsx will handle the display for an empty campaigns array.
+      setDataLoadedMsg('');
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       setDataLoadedMsg('Error al cargar los datos del dashboard. Por favor, inténtelo de nuevo más tarde.');
@@ -118,7 +117,7 @@ const InicioView: React.FC = () => {
   }
 
   return (
-    <Container fluid className="p-4" style={{ background: 'linear-gradient(to right, #F0F4FF, #E2E9FF)', color: '#333', minHeight: '100vh' }}>
+    <Container fluid className="p-4" style={{ color: '#333', minHeight: '100vh' }}>
       <h2 style={{ color: '#282A5B', fontWeight: 'bold', marginBottom: '2rem' }}>Dashboard de Campañas</h2>
       
       {dataLoadedMsg && (
@@ -127,24 +126,32 @@ const InicioView: React.FC = () => {
         </Alert>
       )}
 
-      <Row className="mb-4 gx-4">
-        <Col md={12}>
-          <Iniciocharts 
-            totalClicks={totalClicks} 
-            totalOpens={totalOpens} 
-            totalDineroGastado={totalDineroGastado} 
-          />
-        </Col>
-      </Row>
-      <Row className="gx-4">
-        <Col md={12}>
-          <Iniciodesign 
-            campaigns={campaigns} 
-            onEditCampaign={handleEditCampaign} 
-            onDeleteCampaign={handleDeleteCampaign} 
-          />
-        </Col>
-      </Row>
+      {/* Conditional rendering for tutorial or campaign data */}
+      {campaigns.length === 0 && !dataLoadedMsg ? (
+        <TutorialView />
+      ) : campaigns.length > 0 ? (
+        <>
+          <Row className="mb-4 gx-4">
+            <Col md={12}>
+              <Iniciocharts 
+                totalClicks={totalClicks} 
+                totalOpens={totalOpens} 
+                totalDineroGastado={totalDineroGastado} 
+              />
+            </Col>
+          </Row>
+          <Row className="gx-4">
+            <Col md={12}>
+              <Iniciodesign 
+                campaigns={campaigns} 
+                onEditCampaign={handleEditCampaign} 
+                onDeleteCampaign={handleDeleteCampaign} 
+              />
+            </Col>
+          </Row>
+        </>
+      ) : null /* Avoid rendering anything if campaigns are empty but there's a dataLoadedMsg (e.g., error) */}
+
     </Container>
   );
 };

@@ -16,11 +16,7 @@ interface StrapiUploadResponse {
  */
 export const uploadFile = async (file: File, folder: string = ''): Promise<StrapiUploadResponse[]> => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('No hay token de autenticación');
-    }
-
+    // Token handling removed as Strapi endpoints don't require it.
     const formData = new FormData();
     formData.append('files', file);
     
@@ -31,9 +27,7 @@ export const uploadFile = async (file: File, folder: string = ''): Promise<Strap
 
     const response = await fetch(`${API_URL}/api/upload`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      // Authorization header removed
       body: formData
     });
 
@@ -70,17 +64,12 @@ interface StrapiUserResponse {
  */
 export const updateUserAvatar = async (userId: number, fileId: number): Promise<StrapiUserResponse> => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('No hay token de autenticación');
-    }
+    // Token handling removed as Strapi endpoints don't require it.
 
     // Primero, obtener el usuario actual para ver cómo está estructurado el campo avatar
     const userResponse = await fetch(`${API_URL}/api/users/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      method: 'GET'
+      // Authorization header removed
     });
     
     if (!userResponse.ok) {
@@ -94,7 +83,7 @@ export const updateUserAvatar = async (userId: number, fileId: number): Promise<
     const response = await fetch(`${API_URL}/api/users/${userId}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        // Authorization header removed
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

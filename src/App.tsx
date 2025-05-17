@@ -9,6 +9,8 @@ import Footer from './components/Footer/Footer';
 import UserInitializer from './components/UserInitializer';
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalLoadingProvider from './components/common/GlobalLoadingProvider';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { useEffect } from 'react';
 import useUserStore from './store/useUserStore';
 
@@ -43,6 +45,18 @@ function App() {
       
       {/* Proveedor global de carga envuelve el contenido principal */}
       <GlobalLoadingProvider>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
         <div className="flex-grow">
           <Routes>
             <Route path="/" element={

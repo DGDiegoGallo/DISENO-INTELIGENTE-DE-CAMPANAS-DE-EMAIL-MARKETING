@@ -93,18 +93,14 @@ const reportService = {
    */
   getUserCampaigns: async (userId: number): Promise<UserCampaignsData> => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
+      // Token handling removed as per new authentication strategy
 
       // Obtener campañas del usuario
       const response = await fetch(
         `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id]=${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        { // Headers object might still be needed for Content-Type or other headers in the future,
+          // but Authorization is removed.
+          headers: {}
         }
       );
 
@@ -197,7 +193,7 @@ const reportService = {
         console.error('Mensaje de Error:', error.message);
         console.error('Stack de Error:', error.stack);
       }
-      console.error('Token que se intentó usar:', localStorage.getItem('token'));
+            // console.error('Token que se intentó usar:', localStorage.getItem('token')); // Line removed as token is no longer used here
       throw error;
     }
   }

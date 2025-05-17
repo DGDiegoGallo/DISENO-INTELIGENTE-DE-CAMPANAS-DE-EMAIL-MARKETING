@@ -43,7 +43,7 @@ const Iniciodesign: React.FC<IniciodesignProps> = ({ campaigns, onEditCampaign, 
       
       {campaigns.length === 0 ? (
         <div style={noCampaignsStyle}>
-          <p>No hay campañas para mostrar.</p>
+          <p>No hay campañas.</p>
         </div>
       ) : (
         <>

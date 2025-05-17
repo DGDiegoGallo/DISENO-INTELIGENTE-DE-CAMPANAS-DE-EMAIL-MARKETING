@@ -179,6 +179,15 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
     
     // Activar el indicador de carga global
     useLoadingStore.getState().startLoading('Guardando campaña...');
+
+  // Añadir duración artificial de 1 segundo al spinner
+  setTimeout(() => {
+    setFormState(prevState => ({
+      ...prevState,
+      isLoading: false, // Ocultar spinner local si existe
+    }));
+    useLoadingStore.getState().stopLoading(); // Ocultar spinner global
+  }, 1000);
     
     // Validar que se haya seleccionado un grupo de contactos específico
     // Modal should appear if no group, 'todos', or 'General' is selected.

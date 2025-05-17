@@ -1,9 +1,52 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+// Interface for jsPDF instance extended by autoTable
+// Interface for jsPDF instance extended by autoTable
+interface jsPDFWithAutoTable extends jsPDF {
+  lastAutoTable: { // This property is added by autoTable and assumed to be present by its types
+    finalY: number;
+  };
+}
 import { UserCampaignsData, CampaignData, ContactGroup } from '@/services/reportService';
 import type { StrapiUser } from '@/interfaces/user';
 
+// Helper to format rates as percentages
+const formatRateAsPercentage = (rate: number | undefined): string => {
+  if (typeof rate !== 'number' || isNaN(rate)) return 'N/A';
+  return `${(rate * 100).toFixed(2)}%`;
+};
+
+// Interfaces for A/B Test Data
+export interface ABTestCampaignMetrics {
+  openRate: number;
+  clickRate: number;
+  conversionRate: number;
+  bounceRate?: number;      // Optional as per example
+  unsubscribeRate?: number; // Optional as per example
+}
+
+export interface ABTestResultDetails {
+  testId: string;
+  testName: string;
+  dateCreated: string;
+  campaignA: ABTestCampaignMetrics;
+  campaignB: ABTestCampaignMetrics;
+  winner: 'A' | 'B' | 'tie'; // Assuming 'tie' could be a possibility
+  recommendation: string;
+}
+
+export interface ABTestData {
+  id: string;
+  name: string;
+  dateCreated: string;
+  campaignAId: number;
+  campaignBId: number;
+  campaignAName: string;
+  campaignBName: string;
+  results: ABTestResultDetails;
+}
 
 export interface ReportPDFGeneratorRef {
   generatePDF: () => Promise<void>;
@@ -19,10 +62,11 @@ interface ReportPDFGeneratorProps {
     campaignChartRef: React.RefObject<HTMLDivElement | null>;
     contactsChartRef: React.RefObject<HTMLDivElement | null>;
   };
+  abTests?: ABTestData[]; // Added prop for A/B test data
 }
 
 const ReportPDFGenerator = forwardRef<ReportPDFGeneratorRef, ReportPDFGeneratorProps>(
-  ({ user, reportData, onProgress, onError, onSuccess, chartRefs }, ref) => {
+  ({ user, reportData, onProgress, onError, onSuccess, chartRefs, abTests }, ref) => {
     
     // Generate PDF method exposed via ref
     const generatePDF = async () => {
@@ -199,8 +243,127 @@ const ReportPDFGenerator = forwardRef<ReportPDFGeneratorRef, ReportPDFGeneratorP
             headStyles: { fillColor: [40, 42, 91] }
           });
         }
+
+        onProgress(80); // Progress before A/B tests
+
+        // Add A/B Test Results section
+        if (abTests && abTests.length > 0) {
+          doc.addPage();
+          let currentY = 20;
+          doc.setFontSize(16);
+          doc.setTextColor(40, 42, 91);
+          doc.text('Resultados de Pruebas A/B', 20, currentY);
+          currentY += 10;
+
+          abTests.forEach((test, index) => {
+            if (index > 0) {
+              currentY += 15; // More space between tests
+            }
+            // Check if a new page is needed before drawing the test content
+            if (currentY > 250) { // Estimate space needed for a test block
+              doc.addPage();
+              currentY = 20;
+               // Re-draw section title on new page if it's the first item on this new page
+              doc.setFontSize(16);
+              doc.setTextColor(40, 42, 91);
+              doc.text('Resultados de Pruebas A/B (Continuación)', 20, currentY);
+              currentY += 10;
+            }
+            
+            doc.setFontSize(12);
+            doc.setTextColor(40, 42, 91);
+            doc.text(`Prueba: ${test.name}`, 20, currentY);
+            currentY += 7;
+
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Fecha de Creación: ${formatDate(test.dateCreated)}`, 20, currentY);
+            currentY += 7;
+
+            const results = test.results;
+            const campaignA = results.campaignA;
+            const campaignB = results.campaignB;
+
+            const tableData = [
+              [
+                'Tasa de Apertura',
+                formatRateAsPercentage(campaignA.openRate),
+                formatRateAsPercentage(campaignB.openRate)
+              ],
+              [
+                'Tasa de Clics',
+                formatRateAsPercentage(campaignA.clickRate),
+                formatRateAsPercentage(campaignB.clickRate)
+              ],
+              [
+                'Tasa de Conversión',
+                formatRateAsPercentage(campaignA.conversionRate),
+                formatRateAsPercentage(campaignB.conversionRate)
+              ],
+            ];
+            // Optionally add bounce and unsubscribe if they are guaranteed to exist or handled
+            if (typeof campaignA.bounceRate === 'number' && typeof campaignB.bounceRate === 'number') {
+              tableData.push([
+                'Tasa de Rebote',
+                formatRateAsPercentage(campaignA.bounceRate),
+                formatRateAsPercentage(campaignB.bounceRate)
+              ]);
+            }
+            if (typeof campaignA.unsubscribeRate === 'number' && typeof campaignB.unsubscribeRate === 'number') {
+              tableData.push([
+                'Tasa de Desuscripción',
+                formatRateAsPercentage(campaignA.unsubscribeRate),
+                formatRateAsPercentage(campaignB.unsubscribeRate)
+              ]);
+            }
+
+            autoTable(doc, {
+              startY: currentY,
+              head: [['Métrica', `Campaña A: ${test.campaignAName}`, `Campaña B: ${test.campaignBName}`]],
+              body: tableData,
+              theme: 'striped',
+              headStyles: { fillColor: [40, 42, 91] },
+              didDrawPage: (data) => {
+                currentY = data.cursor?.y ?? currentY;
+                if (data.pageNumber > doc.getNumberOfPages()) {
+                    // If autotable created a new page, reset Y and add title
+                    currentY = 20;
+                    doc.setFontSize(16);
+                    doc.setTextColor(40, 42, 91);
+                    doc.text('Resultados de Pruebas A/B (Continuación)', 20, currentY);
+                    currentY +=10;
+                }
+              },
+              // Ensure table doesn't split rows awkwardly if possible, though autoTable handles most of this
+            });
+            const lastTable = (doc as jsPDFWithAutoTable).lastAutoTable;
+            if (lastTable && typeof lastTable.finalY === 'number') {
+              currentY = lastTable.finalY + 10;
+            } else {
+              currentY += 10; // Fallback increment if finalY is not available
+            }
+
+            doc.setFontSize(10);
+            doc.setTextColor(40, 42, 91);
+            doc.text('Ganador:', 20, currentY);
+            doc.setTextColor(0, 0, 0);
+            doc.text(results.winner === 'A' ? test.campaignAName : (results.winner === 'B' ? test.campaignBName : 'Empate'), 40, currentY);
+            currentY += 7;
+
+            doc.setTextColor(40, 42, 91);
+            doc.text('Recomendación de Prueba A/B:', 20, currentY);
+            currentY += 5;
+            doc.setTextColor(0, 0, 0);
+            const recommendationLines = doc.splitTextToSize(results.recommendation, 170);
+            doc.text(recommendationLines, 20, currentY);
+            currentY += (recommendationLines.length * 5) + 5;
+          });
+          onProgress(90); // Update progress after A/B tests
+        } else {
+          onProgress(90); // Still update progress to 90 if no A/B tests before recommendations
+        }
         
-        // Add recommendations
+        // Add recommendations (These were previously at onProgress(90))
         doc.addPage();
         doc.setFontSize(14);
         doc.setTextColor(40, 42, 91);

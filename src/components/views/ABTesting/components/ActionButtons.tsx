@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Swal from 'sweetalert2';
 import { FaChartBar, FaUndo } from 'react-icons/fa';
 import { CSSProperties } from 'react';
 
@@ -30,15 +29,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   const handleGenerateClick = () => {
     onGenerate();
-    // Assuming onGenerate is successful if no error is thrown immediately.
-    // For async operations, the alert should ideally be triggered by the parent component upon promise resolution.
-    Swal.fire({
-      title: '¡Éxito!',
-      text: 'La generación de resultados se ha iniciado correctamente.',
-      icon: 'success',
-      confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#F21A2B' // Using a consistent theme color
-    });
   };
   const [isGenerateHovered, setIsGenerateHovered] = useState(false);
   const [isResetHovered, setIsResetHovered] = useState(false);

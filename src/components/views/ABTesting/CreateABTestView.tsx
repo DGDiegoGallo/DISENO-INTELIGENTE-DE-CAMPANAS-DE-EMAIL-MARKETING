@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 // FaUndo is now used in ActionButtons.tsx
 import useLoadingStore from '../../../store/useLoadingStore';
@@ -7,7 +7,6 @@ import campaignService, { Campaign } from '../../../services/campaignService';
 import * as abTestingService from '../../../services/abTestingComparisonService';
 import { TestResults } from './interfaces/testResults';
 import { transformStrapiCollection, transformStrapiSingle } from '../../../services/strapiHelpers';
-import { toast } from 'react-toastify';
 
 // Componentes
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -63,6 +62,11 @@ const CreateABTestView: React.FC = () => {
   const [testResults, setTestResults] = useState<TestResults | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [isGeneratingResults, setIsGeneratingResults] = useState(false);
+  const showResultsRef = useRef(showResults);
+
+  useEffect(() => {
+    showResultsRef.current = showResults;
+  }, [showResults]);
   const [showMinCampaignsModal, setShowMinCampaignsModal] = useState(false);
 
   const currentUser = useUserStore(state => state.user); // Get current user object
@@ -116,13 +120,10 @@ const CreateABTestView: React.FC = () => {
 
       setCampaigns(finalFilteredCampaigns);
 
-      if (finalFilteredCampaigns.length === 0) {
-        toast.info('No se encontraron campañas para el usuario actual que puedan usarse en un Test A/B.');
-      } else if (finalFilteredCampaigns.length === 1) {
-        toast.warn(`Solo se encontró 1 campaña disponible. Necesitas al menos 2 para un Test A/B.`);
-      } else { // 2 or more campaigns
-        toast.success(`Se cargaron ${finalFilteredCampaigns.length} campañas para el Test A/B.`);
+      if (finalFilteredCampaigns.length >= 2) { // 2 or more campaigns
+        // toast.success(`Se cargaron ${finalFilteredCampaigns.length} campañas para el Test A/B.`);
       }
+      // The modal (setShowMinCampaignsModal) handles cases with < 2 campaigns, so no toast needed here.
 
     } catch (error) {
       console.error('Error al cargar campañas:', error);
@@ -248,6 +249,7 @@ const CreateABTestView: React.FC = () => {
     if (!validateTestData()) return;
 
     setIsGeneratingResults(true);
+    // useLoadingStore.getState().startLoading(); // Temporarily disabled for debugging
     setErrorMessage('');
     setSuccessMessage(''); 
     setTestResults(null);
@@ -271,7 +273,7 @@ const CreateABTestView: React.FC = () => {
       
       try {
         abTestingService.saveABTest(testName, campaignA, campaignB, newResults);
-        setSuccessMessage('Resultados generados y guardados en localStorage con éxito.');
+        // setSuccessMessage('Resultados generados y guardados en localStorage con éxito.');
       } catch (saveError) {
         console.error('Error al guardar la prueba A/B en localStorage:', saveError);
         setErrorMessage('Resultados generados, pero error al guardar en localStorage.');
@@ -282,15 +284,27 @@ const CreateABTestView: React.FC = () => {
       setErrorMessage('Error al generar los resultados. Por favor, intente de nuevo.');
       setShowResults(false);
     } finally {
+      // Artificial 1-second delay for the spinner
       setTimeout(() => {
         setIsGeneratingResults(false);
-        console.log('Finished generating A/B test results attempt after delay. isGeneratingResults:', false);
-        if (document.getElementById('results-section')) {
-          scrollToResults();
+        // useLoadingStore.getState().stopLoading(); // Re-enable if necessary
+        
+        // Set success message immediately after spinner hides
+        if (errorMessage === '') { // Only show success if no error occurred during generation
+          setSuccessMessage('Test A/B generado exitosamente!');
         }
-      }, 2000);
+
+        // Scroll to results if they are shown
+        // Adding a minimal delay to ensure DOM update before scrolling
+        setTimeout(() => {
+          if (showResultsRef.current && document.getElementById('results-section')) {
+            scrollToResults();
+          }
+        }, 50); // Small delay for DOM to update
+
+      }, 1000); // Spinner visible for 1 second
     }
-  }, [campaignA, campaignB, testName, validateTestData, scrollToResults]);
+  }, [campaignA, campaignB, testName, validateTestData, scrollToResults, errorMessage]);
 
   // Función para reiniciar el estado de la prueba A/B
   const handleResetTest = useCallback(() => {

@@ -28,7 +28,6 @@ const RegisterForm: React.FC = () => {
   const [telefono, setTelefono] = useState('');
   
   // Otros datos
-  const [avatar, setAvatar] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [marketingAccepted, setMarketingAccepted] = useState(false);
   
@@ -177,7 +176,6 @@ const RegisterForm: React.FC = () => {
       ciudad: ciudad || undefined,
       domicilio: domicilio || undefined,
       telefono: telefono || undefined,
-      avatar: avatar || undefined,
       confirmed: false,
       blocked: false
     };
@@ -455,31 +453,7 @@ const RegisterForm: React.FC = () => {
         />
       </div>
 
-      {/* Avatar (URL) */}
-      <div className="mb-3">
-        <label htmlFor="avatar" className="form-label">URL de Avatar (opcional)</label>
-        <input
-          type="text"
-          className="form-control"
-          id="avatar"
-          placeholder="https://ejemplo.com/avatar.jpg"
-          value={avatar}
-          onChange={(e) => setAvatar(e.target.value)}
-        />
-        {avatar && (
-          <div className="mt-2 text-center">
-            <img 
-              src={avatar} 
-              alt="Vista previa de avatar" 
-              className="rounded-circle"
-              style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=Error';
-              }}
-            />
-          </div>
-        )}
-      </div>
+
     </>
   );
 

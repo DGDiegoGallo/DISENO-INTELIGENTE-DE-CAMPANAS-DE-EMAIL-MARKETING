@@ -8,15 +8,28 @@ interface AuthState {
   login: (userData: { user: StrapiUser; token: string }) => boolean;
   logout: () => void;
   checkAuth: () => boolean;
+  setTemporaryUserAvatar: (userId: number, avatarDataUrl: string) => void;
+  getEffectiveAvatar: (user: StrapiUser | null) => string | undefined;
 }
 
 // Función extremadamente simple para recuperar datos del localStorage
+const getTemporaryAvatar = (userId: number | string): string | null => {
+  if (!userId) return null;
+  return localStorage.getItem(`temp_profile_avatar_user_${userId}`);
+};
+
 const getStoredAuth = () => {
   try {
     const userStr = localStorage.getItem('auth_user');
     const token = localStorage.getItem('auth_token');
     if (userStr && token) {
-      const user = JSON.parse(userStr);
+      let user = JSON.parse(userStr) as StrapiUser;
+      if (user && user.id) {
+        const tempAvatar = getTemporaryAvatar(user.id);
+        if (tempAvatar) {
+          user = { ...user, avatar: tempAvatar };
+        }
+      }
       return { user, token, isAuthenticated: true };
     }
   } catch (e) {
@@ -32,17 +45,23 @@ const useUserStore = create<AuthState>()((set, get) => ({
   
   // Iniciar sesión
   login: (userData) => {
+    const initialUser = userData.user;
+    const tempAvatar = getTemporaryAvatar(initialUser.id);
+    const userToStore: StrapiUser = tempAvatar 
+      ? { ...initialUser, avatar: tempAvatar } 
+      : { ...initialUser };
+
     try {
-      console.log('Guardando datos de autenticación para:', userData.user.email);
+      console.log('Guardando datos de autenticación para:', userToStore.email);
       
       // Guardar en localStorage usando nuestras nuevas claves
-      localStorage.setItem('auth_user', JSON.stringify(userData.user));
+      localStorage.setItem('auth_user', JSON.stringify(userToStore));
       localStorage.setItem('auth_token', userData.token);
       
       // También mantener compatibilidad con el formato auth-storage que usan otras páginas
       localStorage.setItem('auth-storage', JSON.stringify({
         state: {
-          user: userData.user,
+          user: userToStore,
           token: userData.token,
           isAuthenticated: true
         },
@@ -51,11 +70,11 @@ const useUserStore = create<AuthState>()((set, get) => ({
       
       // Para compatibilidad con código existente
       localStorage.setItem('token', userData.token);
-      localStorage.setItem('user', JSON.stringify(userData.user));
+      localStorage.setItem('user', JSON.stringify(userToStore)); // Use userToStore here as well
       
       // Actualizar el estado
       set({
-        user: userData.user,
+        user: userToStore,
         token: userData.token,
         isAuthenticated: true
       });
@@ -95,11 +114,29 @@ const useUserStore = create<AuthState>()((set, get) => ({
     const stored = getStoredAuth();
     if (stored.isAuthenticated) {
       // Actualizar el estado si encontramos datos en localStorage
+      // The stored object already includes the temp avatar if present due to modification in getStoredAuth
       set(stored);
       return true;
     }
     
     return false;
+  },
+
+  setTemporaryUserAvatar: (userId, avatarDataUrl) => {
+    if (!userId) return;
+    localStorage.setItem(`temp_profile_avatar_user_${userId}`, avatarDataUrl);
+    set((state) => {
+      if (state.user && state.user.id === userId) {
+        return { user: { ...state.user, avatar: avatarDataUrl } };
+      }
+      return {}; // No change if user doesn't match or doesn't exist
+    });
+  },
+
+  getEffectiveAvatar: (currentUser) => {
+    if (!currentUser || !currentUser.id) return undefined;
+    const tempAvatar = getTemporaryAvatar(currentUser.id);
+    return tempAvatar || currentUser.avatar;
   }
 }));
 

@@ -49,12 +49,21 @@ const ChangeProfilePhotoModal: React.FC<ChangeProfilePhotoModalProps> = ({ show,
     }
   };
   
+  const { setTemporaryUserAvatar } = useUserStore(); // Destructure the new action
+
   const handleUpload = async () => {
-    if (!selectedFile || !user) return;
+    if (!selectedFile || !user || !user.id) return;
     
     setIsUploading(true);
     setError(null);
     setSuccess(null);
+
+    // --- Cascade: Set temporary avatar in localStorage and store --- 
+    if (previewUrl && user.id) {
+      setTemporaryUserAvatar(user.id, previewUrl);
+    }
+    // --- End Cascade edit ---
+
     
     try {
       // Subir el archivo a la carpeta 'profile-photos'
@@ -78,10 +87,13 @@ const ChangeProfilePhotoModal: React.FC<ChangeProfilePhotoModalProps> = ({ show,
               updateResponse.avatar?.toString() || null
           };
           
+          // The login function in useUserStore will now automatically handle
+          // checking for and applying the temporary avatar from localStorage if it exists.
           login({
             user: {
               ...updatedUser,
-              avatar: updatedUser.avatar === null ? undefined : updatedUser.avatar,
+              // Ensure avatar is string | undefined as per StrapiUser
+              avatar: updatedUser.avatar === null ? undefined : String(updatedUser.avatar),
             },
             token: localStorage.getItem('token') || ''
           });

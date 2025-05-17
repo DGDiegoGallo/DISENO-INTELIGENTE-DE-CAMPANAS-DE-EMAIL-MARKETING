@@ -113,7 +113,7 @@ const TestResultsDisplay: React.FC<TestResultsDisplayProps> = ({
   };
 
   return (
-    <div style={containerStyle}>
+    <div id="results-section" style={containerStyle}>
       <div style={headerStyle}>
         <FaChartBar style={headerIconStyle} />
         <h3 style={{ margin: 0, fontSize: '18px' }}>Resultados de la Prueba A/B</h3>

@@ -6,12 +6,16 @@ import { Campaign as BaseCampaign } from '../../services/campaignService';
 import { extractStrapiData } from '../../interfaces/strapi';
 
 // Extender la interfaz Campaign para incluir documentId y Fechas
+interface CampaignDataSimulatorProps {
+  onDataSimulated?: () => void;
+}
+
 interface Campaign extends BaseCampaign {
   documentId?: string;
   Fechas?: string; // Campo de fecha programada en formato ISO
 }
 
-const CampaignDataSimulator: React.FC = () => {
+const CampaignDataSimulator: React.FC<CampaignDataSimulatorProps> = ({ onDataSimulated }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{
     message: string;
@@ -307,6 +311,9 @@ const CampaignDataSimulator: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+      if (onDataSimulated) {
+        onDataSimulated();
+      }
     }
   };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaArrowLeft, FaSync } from 'react-icons/fa';
+import { FaArrowLeft } from 'react-icons/fa';
 import crmService from '../../../services/crmService';
 import { CrmAnalysisContact, CrmStats } from '../../../interfaces/crm';
 import StatsCards from './StatsCards';
@@ -12,16 +12,14 @@ import {
   headerStyle, 
   titleContainerStyle, 
   backIconStyle, 
-  titleStyle,
-  refreshButtonStyle,
-  refreshIconStyle
+  titleStyle
 } from './styles';
+
 
 // Uso de interfaces importadas desde interfaces/crm.ts
 
 const CrmAnalysisView: React.FC = () => {
   // Estados para los datos del CRM
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [crmStats, setCrmStats] = useState<CrmStats | null>(null);
   const [crmContacts, setCrmContacts] = useState<CrmAnalysisContact[]>([]);
   const [dataLoadedMsg, setDataLoadedMsg] = useState<string>('');
@@ -177,7 +175,6 @@ const CrmAnalysisView: React.FC = () => {
 
   // Cargar datos de CRM desde las campañas existentes
   const loadCrmData = useCallback(async () => {
-    setIsLoading(true);
     setDataLoadedMsg('');
     
     try {
@@ -198,7 +195,7 @@ const CrmAnalysisView: React.FC = () => {
       console.error('Error al cargar datos CRM:', error);
       setDataLoadedMsg('Error al cargar datos CRM. Por favor intente nuevamente.');
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false); // No longer needed as isLoading state is removed
     }
   }, [updateChartData]);
 
@@ -222,14 +219,7 @@ const CrmAnalysisView: React.FC = () => {
           <h2 style={titleStyle}>Análisis CRM</h2>
         </div>
         
-        {crmContacts.length > 0 && (
-          <button
-            onClick={refreshCrmData}
-            style={refreshButtonStyle}
-          >
-            <FaSync style={refreshIconStyle} /> Actualizar datos
-          </button>
-        )}
+        {/* El botón de Actualizar Datos ahora es únicamente el que provee CampaignDataSimulator */}
       </div>
       
       {/* Mensaje de estado */}
@@ -249,7 +239,7 @@ const CrmAnalysisView: React.FC = () => {
 
       {/* Simulador de Datos de Campaña */}
       <div className="mt-4 mb-4">
-        <CampaignDataSimulator />
+        <CampaignDataSimulator onDataSimulated={refreshCrmData} />
       </div>
 
       {/* Tabla de contactos CRM */}
@@ -257,19 +247,7 @@ const CrmAnalysisView: React.FC = () => {
         <ContactsTable contacts={crmContacts} />
       )}
 
-      {/* Botón de actualización cuando no hay contactos */}
-      {!crmContacts.length && (
-        <div className="d-flex justify-content-center mt-4">
-          <button 
-            className="btn" 
-            style={{ backgroundColor: '#F21A2B', color: 'white' }}
-            onClick={loadCrmData}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Cargando...' : 'Cargar datos CRM'}
-          </button>
-        </div>
-      )}
+      {/* El botón de carga inicial ahora está integrado en el botón de actualizar del header */}
     </div>
   );
 };
