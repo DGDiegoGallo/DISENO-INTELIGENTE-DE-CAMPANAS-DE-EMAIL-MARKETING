@@ -1,130 +1,152 @@
-// Contenido inicial para InicioView.tsx
-import React from 'react';
-import CircularChart from '../CircularChart/CircularChart';
-import { Doughnut } from 'react-chartjs-2';
-import { FaEdit, FaTrash } from 'react-icons/fa';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Container, Row, Col, Alert } from 'react-bootstrap';
+import Iniciodesign from './InicioView/Iniciodesign';
+import Iniciocharts from './InicioView/Iniciocharts';
+import useAuth from '../../hooks/useAuth';
+import campaignService from '../../services/campaignService'; // No-op change, re-saving
+import { StrapiResponse, extractStrapiData } from '../../interfaces/strapi'; // No-op change, re-saving
+import { DetailedCampaign, InteraccionDestinatario } from '../../interfaces/campaign'; 
+import useLoadingStore from '../../store/useLoadingStore';
+import { useNavigate } from 'react-router-dom';
 
-// Registrar ChartJS (puede que necesite hacerse a nivel de App si se usa en más vistas)
-ChartJS.register(ArcElement, Tooltip, Legend);
+const InicioView: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [campaigns, setCampaigns] = useState<DetailedCampaign[]>([]);
+  const [dataLoadedMsg, setDataLoadedMsg] = useState<string>('');
+  const { startLoading, stopLoading } = useLoadingStore();
 
-// Interfaces (podrían moverse a un archivo de tipos)
-/* // Ya no se usa directamente aquí
-interface ChartInstance {
-  data: {
-    labels: string[];
-    datasets: Array<{
-      backgroundColor: string[];
-      [key: string]: unknown;
-    }>;
+  const [totalClicks, setTotalClicks] = useState(0);
+  const [totalOpens, setTotalOpens] = useState(0);
+  const [totalDineroGastado, setTotalDineroGastado] = useState(0);
+
+  const loadDashboardData = useCallback(async () => {
+    if (!user || !user.id) {
+      setDataLoadedMsg('Usuario no autenticado. No se pueden cargar los datos.');
+      console.error('User or user.id is undefined.');
+      return;
+    }
+
+    startLoading('Cargando datos del dashboard...');
+    setDataLoadedMsg('');
+    try {
+      const response: StrapiResponse<DetailedCampaign> = 
+        await campaignService.getUserCampaigns(1, 20, user.id);
+      
+      let processedData: DetailedCampaign[] = [];
+      if (response && response.data) {
+        processedData = response.data.map(item => {
+          const extracted = extractStrapiData(item);
+          return {
+            ...extracted,
+            interaccion_destinatario: typeof extracted.interaccion_destinatario === 'object' && extracted.interaccion_destinatario !== null
+                                      ? extracted.interaccion_destinatario as InteraccionDestinatario
+                                      : null, 
+          } as DetailedCampaign;
+        });
+      }
+
+      setCampaigns(processedData);
+
+      let aggClicks = 0;
+      let aggOpens = 0;
+      let aggDinero = 0;
+
+      processedData.forEach(campaign => {
+        if (campaign.interaccion_destinatario) {
+          Object.values(campaign.interaccion_destinatario).forEach(interaction => {
+            aggOpens += interaction.opens || 0;
+            aggClicks += interaction.clicks || 0;
+            aggDinero += interaction.dinero_gastado || 0; 
+          });
+        }
+      });
+
+      setTotalClicks(aggClicks);
+      setTotalOpens(aggOpens);
+      setTotalDineroGastado(aggDinero);
+
+      if (processedData.length === 0) {
+        setDataLoadedMsg('No se encontraron campañas para mostrar.');
+      } else {
+        setDataLoadedMsg(''); 
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      setDataLoadedMsg('Error al cargar los datos del dashboard. Por favor, inténtelo de nuevo más tarde.');
+    } finally {
+      stopLoading();
+    }
+  }, [user, startLoading, stopLoading]);
+
+  useEffect(() => {
+    if (user && user.id) {
+      loadDashboardData();
+    } else if (user === null) { 
+        setDataLoadedMsg('Por favor, inicie sesión para ver el dashboard.');
+    }
+  }, [user, loadDashboardData]); 
+
+  const handleEditCampaign = (id: number | string) => {
+    navigate(`/ruta-editar-campana/${id}`); 
   };
-  getDatasetMeta: (index: number) => {
-    controller: {
-      getStyle: (index: number) => {
-        borderColor: string;
-        borderWidth: number;
-      };
-    };
+
+  const handleDeleteCampaign = async (id: number | string) => {
+    if (typeof id !== 'number') {
+      console.error('Invalid campaign ID for deletion');
+      return;
+    }
+    startLoading('Eliminando campaña...');
+    try {
+      await campaignService.deleteCampaign(id); 
+      loadDashboardData();
+      setDataLoadedMsg('Campaña eliminada exitosamente.');
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      setDataLoadedMsg('Error al eliminar la campaña.');
+    } finally {
+      stopLoading();
+    }
   };
-}
-*/
 
-interface Campaign {
-    id: number;
-    fecha: string;
-    detalles: string;
-}
+  if (!user) {
+    return (
+      <Container fluid className="p-4" style={{ background: 'linear-gradient(to right, #6C9AFF, #3267E3)', color: '#fff', minHeight: '100vh' }}>
+        <Alert variant="info" className="text-center">Cargando información del usuario...</Alert>
+      </Container>
+    );
+  }
 
-interface InicioViewProps {
-  emailChartData: any; // Considerar tipar mejor
-  emailChartOptions: any; // Considerar tipar mejor
-  campaignData: Campaign[];
-}
-
-const InicioView: React.FC<InicioViewProps> = ({ emailChartData, emailChartOptions, campaignData }) => {
   return (
-    <>
-      <h2 className="mt-4 mb-4">Interacciones</h2>
+    <Container fluid className="p-4" style={{ background: 'linear-gradient(to right, #F0F4FF, #E2E9FF)', color: '#333', minHeight: '100vh' }}>
+      <h2 style={{ color: '#282A5B', fontWeight: 'bold', marginBottom: '2rem' }}>Dashboard de Campañas</h2>
       
-      <div className="row">
-        {/* Primer div con los dos gráficos circulares en tarjetas separadas */}
-        <div className="col-md-6 mb-4">
-          <div className="card border-1" style={{ borderColor: '#e9e9e9', height: '100%' }}>
-            <div className="card-body p-4">
-              <div className="row h-100">
-                <div className="col-6 d-flex justify-content-center align-items-center">
-                  <div className="card border-1 w-100 h-100" style={{ borderColor: '#e9e9e9' }}>
-                    <div className="card-body d-flex justify-content-center align-items-center">
-                      <CircularChart percentage={74} label="Tasa de clics" />
-                    </div>
-                  </div>
-                </div>
-                <div className="col-6 d-flex justify-content-center align-items-center">
-                  <div className="card border-1 w-100 h-100" style={{ borderColor: '#e9e9e9' }}>
-                    <div className="card-body d-flex justify-content-center align-items-center">
-                      <CircularChart percentage={74} label="Tasa de apertura" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Segundo div con el gráfico donut */}
-        <div className="col-md-6 mb-4">
-          <div className="card border-1" style={{ borderColor: '#e9e9e9', height: '100%' }}>
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center justify-content-center">
-                <div style={{ width: '100%', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Doughnut data={emailChartData} options={emailChartOptions} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <h3 className="mb-3">Campañas en curso</h3>
-      {/* Tabla de campañas */}
-      <div> {/* Contenedor General sin estilos propios */}
-        {/* Cabecera (mantiene su estilo) */}
-        <div className="row g-0 text-white rounded-top mb-3" style={{ backgroundColor: '#282A5B', padding: '0.75rem 1.25rem' }}>
-          <div className="col-4 fw-bold">Fecha</div>
-          <div className="col-5 fw-bold">Detalles</div>
-          <div className="col-3 fw-bold text-end">Acciones</div>
-        </div>
-        {/* Cuerpo (cada fila es una tarjeta separada) */}
-        {campaignData.map((campaign) => (
-          <div key={campaign.id} className="bg-white rounded shadow mb-3">
-            <div 
-              className="row g-0 align-items-center" 
-              style={{
-                padding: '0.75rem 1.25rem' // Padding original
-              }}
-            >
-              <div className="col-4">{campaign.fecha}</div>
-              <div className="col-5">{campaign.detalles}</div>
-              <div className="col-3 text-end">
-                <button className="btn btn-sm btn-link p-0 me-2" title="Editar">
-                  <FaEdit />
-                </button>
-                <button className="btn btn-sm btn-link p-0 text-danger" title="Eliminar">
-                  <FaTrash />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      {/* Botón Ver más */}
-      <div className="text-center">
-        <button className="btn text-white fw-bold" style={{ backgroundColor: '#FF3A44', padding: '0.5rem 1.5rem' }}>
-          Ver más
-        </button>
-      </div>
-    </>
+      {dataLoadedMsg && (
+        <Alert variant={dataLoadedMsg.startsWith('Error') ? 'danger' : 'info'} className="mb-4">
+          {dataLoadedMsg}
+        </Alert>
+      )}
+
+      <Row className="mb-4 gx-4">
+        <Col md={12}>
+          <Iniciocharts 
+            totalClicks={totalClicks} 
+            totalOpens={totalOpens} 
+            totalDineroGastado={totalDineroGastado} 
+          />
+        </Col>
+      </Row>
+      <Row className="gx-4">
+        <Col md={12}>
+          <Iniciodesign 
+            campaigns={campaigns} 
+            onEditCampaign={handleEditCampaign} 
+            onDeleteCampaign={handleDeleteCampaign} 
+          />
+        </Col>
+      </Row>
+    </Container>
   );
 };
 
-export default InicioView; 
+export default InicioView;

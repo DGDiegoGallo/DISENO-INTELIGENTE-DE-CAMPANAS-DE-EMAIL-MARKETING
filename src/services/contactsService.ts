@@ -17,7 +17,7 @@ const initializeStorage = () => {
   }
   
   if (!localStorage.getItem(GROUPS_STORAGE_KEY)) {
-    localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(['Grupo 1', 'Grupo 2', 'Sin grupo...']));
+    localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(['Sin grupo...']));
   }
 };
 

@@ -142,3 +142,63 @@ export const sectionTitleStyle: CSSProperties = {
   borderBottom: `2px solid #F21A2B`, // Red accent
   display: 'inline-block',
 };
+
+// Modal Styles
+export const modalOverlayStyle: CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0, 0, 0, 0.6)', // Semi-transparent grey backdrop
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1050, // Ensure it's above other content
+};
+
+export const modalContentStyle: CSSProperties = {
+  backgroundColor: '#ffffff',
+  padding: '30px',
+  borderRadius: '8px',
+  boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+  minWidth: '350px',
+  maxWidth: '500px',
+  textAlign: 'center',
+};
+
+export const modalTextStyle: CSSProperties = {
+  marginBottom: '25px',
+  fontSize: '16px',
+  lineHeight: '1.6',
+  color: '#333',
+};
+
+export const modalActionsStyle: CSSProperties = {
+  display: 'flex',
+  justifyContent: 'center',
+  gap: '15px',
+  marginTop: '20px',
+};
+
+const modalButtonBaseStyle: CSSProperties = {
+  padding: '10px 20px',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontWeight: 'bold',
+  fontSize: '15px',
+  transition: 'background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+};
+
+export const modalButtonPrimaryStyle: CSSProperties = {
+  ...modalButtonBaseStyle,
+  backgroundColor: '#F21A2B', // Main brand red color
+};
+
+export const modalButtonSecondaryStyle: CSSProperties = {
+  ...modalButtonBaseStyle,
+  backgroundColor: '#6c757d', // Grey for secondary actions
+};

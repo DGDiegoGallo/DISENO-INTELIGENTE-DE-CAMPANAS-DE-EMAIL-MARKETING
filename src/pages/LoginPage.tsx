@@ -36,21 +36,17 @@ const LoginPage: React.FC = () => {
     setError(null);
     setIsLoading(true);
 
-    console.log('Attempting login with:', { identifier: email, password: password });
+    console.log('Attempting simulated login with email:', email);
     try {
-      // 1. Llamar a la API de Strapi para autenticar
-      const response = await axios.post('http://34.238.122.213:1337/api/auth/local', {
-        identifier: email,
-        password: password
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      // 1. Llamar a la API de Strapi para buscar el usuario por email
+      const response = await axios.get(
+        `http://34.238.122.213:1337/api/users?filters[email][$eq]=${email}&populate=*`
+      );
 
       // 2. Procesar la respuesta
-      if (response.data?.jwt && response.data?.user) {
-        console.log('Autenticación exitosa');
+      if (response.data && response.data.length === 1) {
+        const user = response.data[0]; // Strapi devuelve un array de usuarios
+        console.log('Usuario encontrado para login simulado:', user);
 
         // Guardar preferencia de recordar email
         if (rememberMe) {
@@ -59,47 +55,43 @@ const LoginPage: React.FC = () => {
           localStorage.removeItem('rememberedEmail');
         }
 
-        // 3. Iniciar sesión en la aplicación
+        // 3. Iniciar sesión en la aplicación con los datos del usuario y un token mock
         const loginSuccess = login({
-          user: response.data.user,
-          token: response.data.jwt
+          user: user, // Usar el objeto de usuario completo obtenido de Strapi
+          token: 'mock-jwt-for-demo-purposes' // Token JWT simulado
         });
 
-        // 4. Si el login fue exitoso, redirigir
+        // 4. Si el login simulado fue exitoso, redirigir
         if (loginSuccess) {
-          // Usar redirección directa para evitar problemas con React Router
           window.location.href = '/dashboard';
         } else {
-          setError('Error al inicializar la sesión');
+          setError('Error al inicializar la sesión del usuario');
         }
+      } else if (response.data && response.data.length === 0) {
+        setError('Usuario no encontrado. Verifique el correo electrónico.');
       } else {
-        setError('Respuesta de autenticación inválida');
+        // Múltiples usuarios encontrados (no debería ocurrir si el email es único) o respuesta inesperada
+        setError('Respuesta inválida del servidor o múltiples usuarios encontrados.');
       }
-    } catch (err) { // Note: parameter changed from 'error' to 'err'
-      let displayMessage = 'Error al iniciar sesión. Por favor, intente más tarde.'; // Default user-facing error
+    } catch (err) {
+      let displayMessage = 'Error al intentar iniciar sesión. Por favor, intente más tarde.';
 
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 400) {
-          displayMessage = 'Campos incorrectos o posible error. Verifique la información e intente nuevamente.';
+          displayMessage = 'Solicitud incorrecta al servidor. Verifique los datos.';
         } else if (err.response?.data?.error?.message) {
-          // For other specific errors from Strapi, show Strapi's message
           displayMessage = err.response.data.error.message;
         } else if (err.message) {
-          // Fallback for Axios errors without a specific backend message but with a general error message
           displayMessage = err.message; // e.g., "Network Error"
         } else {
-          // Fallback for Axios errors with no specific message
-           displayMessage = 'Error de comunicación con el servidor. Verifique su conexión.';
+          displayMessage = 'Error de comunicación con el servidor. Verifique su conexión.';
         }
       } else if (err instanceof Error) {
-        // For generic JavaScript errors not related to Axios
         displayMessage = 'Ha ocurrido un error inesperado en la aplicación.';
-        // console.error('Error de JavaScript no-Axios detectado:', err.message); // Full error logged below
       }
-      // If 'err' is not an AxiosError or an instance of Error, the default 'displayMessage' will be used.
 
       setError(displayMessage);
-      console.error('Error detallado durante el inicio de sesión:', err); // Log the actual error object for detailed debugging
+      console.error('Error detallado durante el inicio de sesión simulado:', err);
     } finally {
       setIsLoading(false);
     }

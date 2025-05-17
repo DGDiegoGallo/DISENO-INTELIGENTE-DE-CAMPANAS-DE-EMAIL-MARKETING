@@ -11,7 +11,7 @@ interface Campaign {
   subject: string;
   contactGroup: string;
   scheduledTime: string;
-  emailDesign?: Record<string, unknown> | string; // Diseño del email
+  emailDesign?: Record<string, unknown> | string | null; // Diseño del email
   emailHtml?: string | null; // HTML generado, puede ser null si no hay contenido
 }
 

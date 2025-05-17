@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import Swal from 'sweetalert2';
 import { FaArrowLeft, FaPen, FaEye, FaUsers } from 'react-icons/fa';
 import EmailEditorComponent from '../EmailEditor';
@@ -7,6 +8,15 @@ import campaignService from '../../services/campaignService';
 import authService from '../../services/auth/authService';
 import * as contactsService from '../../services/contactsService';
 import useLoadingStore from '../../store/useLoadingStore';
+// Import modal styles from ABTesting view styles
+import {
+  modalOverlayStyle,
+  modalContentStyle,
+  modalTextStyle,
+  modalActionsStyle,
+  modalButtonPrimaryStyle,
+  modalButtonSecondaryStyle
+} from './ABTesting/styles/CreateABTestView.styles';
 
 interface CreateCampaignViewProps {
   onBack: () => void; // Función para volver a la vista anterior
@@ -47,12 +57,22 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
   });
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
   const [emailsPreview, setEmailsPreview] = useState<string>('');
+  const [showNoContactsModal, setShowNoContactsModal] = useState(false); // State for the modal on send
+  const [showNoGroupsAvailableModal, setShowNoGroupsAvailableModal] = useState(false); // State for modal if no groups exist on load
+
+  const navigate = useNavigate(); 
 
   // Cargar datos guardados del localStorage al iniciar
   useEffect(() => {
     // Cargar grupos disponibles
-    const groups = contactsService.getAllGroups();
-    setAvailableGroups(groups);
+    const allLoadedGroups = contactsService.getAllGroups();
+    const filteredGroups = allLoadedGroups.filter(group => group !== 'General'); // Filter out 'General'
+    setAvailableGroups(filteredGroups);
+
+    // If no groups are available (after filtering), show the new modal
+    if (filteredGroups.length === 0) {
+      setShowNoGroupsAvailableModal(true);
+    }
     
     // Cargar campaña guardada si existe
     const savedCampaign = localStorage.getItem('currentCampaign');
@@ -160,13 +180,16 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
     // Activar el indicador de carga global
     useLoadingStore.getState().startLoading('Guardando campaña...');
     
-    // Validar que se haya seleccionado un grupo de contactos
-    if (!campaignData.contactGroup) {
+    // Validar que se haya seleccionado un grupo de contactos específico
+    // Modal should appear if no group, 'todos', or 'General' is selected.
+    if (campaignData.contactGroup === '' || campaignData.contactGroup === 'todos') {
       setFormState({
-        ...formState,
-        error: 'Por favor selecciona un grupo de contactos para enviar la campaña',
+        isLoading: false,
+        error: 'Por favor, selecciona un grupo de contactos específico o crea uno.',
         success: null
       });
+      setShowNoContactsModal(true); 
+      useLoadingStore.getState().stopLoading();
       return;
     }
     
@@ -459,16 +482,25 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
                 id="contactGroup"
                 value={campaignData.contactGroup}
                 onChange={handleInputChange}
+                disabled={formState.isLoading}
               >
                 <option value="">Seleccionar un grupo</option>
-                <option value="todos">Todos los contactos</option>
-                {availableGroups.map((group, index) => (
-                  <option key={index} value={group}>{group}</option>
+                {/* Conditionally render 'Todos los contactos' only if there are other specific groups */}
+                {availableGroups.length > 0 && (
+                  <option value="todos">Todos los contactos</option>
+                )}
+                {availableGroups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
                 ))}
               </select>
-              
+              {formState.error && formState.error.includes('grupo de contactos') && (
+                <div className="invalid-feedback">{formState.error}</div>
+              )}
+              {/* Previsualización de emails */}
               {emailsPreview && (
-                <div className="mt-2 p-2 bg-light rounded border" style={{ fontSize: '0.8rem' }}>
+                <div className="mt-2 p-2 border rounded bg-light" style={{ fontSize: '0.85rem' }}>
                   <div className="d-flex align-items-center mb-1">
                     <FaUsers className="text-muted me-1" />
                     <span className="text-muted">Destinatarios:</span>
@@ -555,6 +587,66 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal for No Contacts Selected */}
+      {showNoContactsModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <p style={modalTextStyle}>
+              No has seleccionado ningún grupo de contactos para esta campaña.
+              <br />
+              Por favor, selecciona un grupo o crea uno en la sección de Contactos.
+            </p>
+            <div style={modalActionsStyle}>
+              <button 
+                style={modalButtonSecondaryStyle} 
+                onClick={() => setShowNoContactsModal(false)}
+              >
+                Entendido
+              </button>
+              <button 
+                style={modalButtonPrimaryStyle} 
+                onClick={() => {
+                  setShowNoContactsModal(false);
+                  navigate('/dashboard/contacts'); 
+                }}
+              >
+                Ir a Contactos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for No Groups Available on Load */}
+      {showNoGroupsAvailableModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <p style={modalTextStyle}>
+              No tienes grupos de contactos creados.
+              <br />
+              Para enviar campañas, primero necesitas crear al menos un grupo en la sección de Contactos.
+            </p>
+            <div style={modalActionsStyle}>
+              <button 
+                style={modalButtonSecondaryStyle} 
+                onClick={() => setShowNoGroupsAvailableModal(false)}
+              >
+                Entendido
+              </button>
+              <button 
+                style={modalButtonPrimaryStyle} 
+                onClick={() => {
+                  setShowNoGroupsAvailableModal(false);
+                  navigate('/dashboard/contacts'); // Navigate to contacts view
+                }}
+              >
+                Ir a Contactos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Editor de correo electrónico */}
       {showEmailEditor && (

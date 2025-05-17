@@ -41,25 +41,25 @@ function App() {
       {/* Componente para inicializar datos de usuario */}
       <UserInitializer />
       
-      {/* Proveedor global de carga */}
-      <GlobalLoadingProvider />
-      
-      <div className="flex-grow">
-        <Routes>
-          <Route path="/" element={
-            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
-          } />
-          <Route path="/dashboard/*" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="*" element={<NotFoundView />} />
-        </Routes>
-      </div>
-      {showFooter && <Footer />}
+      {/* Proveedor global de carga envuelve el contenido principal */}
+      <GlobalLoadingProvider>
+        <div className="flex-grow">
+          <Routes>
+            <Route path="/" element={
+              isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
+            } />
+            <Route path="/dashboard/*" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="*" element={<NotFoundView />} />
+          </Routes>
+        </div>
+        {showFooter && <Footer />}
+      </GlobalLoadingProvider>
     </div>
   );
 }

@@ -2,10 +2,18 @@ import React from 'react';
 import { FaUserCircle } from 'react-icons/fa'; // Icono de usuario de ejemplo
 import logoImage from '../../assets/images/Horiz.Preferente.png'; // Importar la imagen del logo
 import useUserStore from '../../store/useUserStore'; // Importar el store de Zustand
+import { useLocation } from 'react-router-dom'; // Para detectar la ruta actual
 
 const Navbar: React.FC = () => {
   // Obtener datos del usuario desde el store de Zustand
-  const { user } = useUserStore();
+  const { user, checkAuth } = useUserStore();
+  const location = useLocation();
+  
+  // Verificar si el usuario está autenticado
+  const isAuthenticated = checkAuth();
+  
+  // Determinar si estamos en una página de autenticación (login o registro)
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   
   // Ya no necesitamos inicializar manualmente, Zustand persist lo hace automáticamente
 
@@ -56,23 +64,25 @@ const Navbar: React.FC = () => {
           />
         </a>
 
-        {/* Componente de usuario */}
-        <div style={userContainerStyle}>
-          <div style={userInfoStyle}>
-            <p style={usernameStyle}>{user ? (user.nombre ? `${user.nombre} ${user.apellido}` : user.username) : 'Usuario'}</p>
-            <p style={emailStyle}>{user?.email || 'ejemplo@gmail.com'}</p>
+        {/* Componente de usuario - Solo mostrar si no estamos en página de auth y el usuario está autenticado */}
+        {!isAuthPage && isAuthenticated && (
+          <div style={userContainerStyle}>
+            <div style={userInfoStyle}>
+              <p style={usernameStyle}>{user ? (user.nombre ? `${user.nombre} ${user.apellido}` : user.username) : 'Usuario'}</p>
+              <p style={emailStyle}>{user?.email || 'ejemplo@gmail.com'}</p>
+            </div>
+            
+            {user?.avatar ? (
+              <img 
+                src={user.avatar} 
+                alt="Perfil" 
+                style={profilePictureStyle}
+              />
+            ) : (
+              <FaUserCircle size={40} color="#ccc" />
+            )}
           </div>
-          
-          {user?.avatar ? (
-            <img 
-              src={user.avatar} 
-              alt="Perfil" 
-              style={profilePictureStyle}
-            />
-          ) : (
-            <FaUserCircle size={40} color="#ccc" />
-          )}
-        </div>
+        )}
       </div>
     </nav>
   );

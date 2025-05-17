@@ -1,5 +1,7 @@
 import strapiService from './strapiService';
 import { StrapiResponse, StrapiSingleResponse } from '../interfaces/strapi';
+import { ProcessedStrapiUser } from '../interfaces/crm';
+import { DetailedCampaign } from '../interfaces/campaign';
 
 // Tipo para campos Rich Text en Strapi v5
 type StrapiRichTextBlock = {
@@ -16,7 +18,7 @@ export interface Campaign {
   nombre: string;           // Título de la campaña
   Fechas?: string;         // Fecha de creación/programación (nota: F mayúscula)
   estado: 'borrador' | 'programado' | 'enviado' | 'cancelado';
-  usuario?: number;        // ID del usuario que creó la campaña (relación con User)
+  usuario?: ProcessedStrapiUser | number; // ID del usuario o el objeto usuario procesado
   asunto: string;          // Asunto del correo
   contenidoHTML?: string | StrapiRichTextBlock[] | null;   // HTML del correo (formato Rich Text para Strapi v5)
   campanaJSON?: string | Record<string, unknown>; // Diseño del correo en formato JSON o string
@@ -326,7 +328,7 @@ const campaignService = {
     page = 1,
     pageSize = 10,
     userId?: number
-  ): Promise<StrapiResponse<Campaign>> => {
+  ): Promise<StrapiResponse<DetailedCampaign>> => {
     try {
       // Si no se proporciona userId, intentar obtenerlo del localStorage o del store de autenticación
       if (!userId) {
@@ -357,7 +359,7 @@ const campaignService = {
       };
 
       // Obtener las campañas filtradas por el usuario logueado
-      return await strapiService.getCollection<Campaign>('proyecto-56s', queryParams);
+      return await strapiService.getCollection<DetailedCampaign>('proyecto-56s', queryParams);
     } catch (error) {
       console.error('Error al obtener campañas del usuario:', error);
       throw error;

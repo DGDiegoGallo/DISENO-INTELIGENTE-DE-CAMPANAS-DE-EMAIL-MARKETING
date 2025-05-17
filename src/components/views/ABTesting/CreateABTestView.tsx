@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 // FaUndo is now used in ActionButtons.tsx
 import useLoadingStore from '../../../store/useLoadingStore';
+import useUserStore from '../../../store/useUserStore'; 
 import campaignService, { Campaign } from '../../../services/campaignService';
 import * as abTestingService from '../../../services/abTestingComparisonService';
 import { TestResults } from './interfaces/testResults';
 import { transformStrapiCollection, transformStrapiSingle } from '../../../services/strapiHelpers';
+import { toast } from 'react-toastify';
 
 // Componentes
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -23,7 +26,7 @@ import {
   titleContainerStyle,
   contentContainerStyle,
   errorMessageStyle,
-  successMessageStyle, // Re-added for save confirmation
+  successMessageStyle, 
   previewContainerStyle,
   previewHeaderStyle,
   previewTitleContainerStyle,
@@ -33,10 +36,17 @@ import {
   sectionTitleStyle, 
   buttonStyle,
   disabledButtonStyle,
-  buttonHoverStyle 
+  buttonHoverStyle,
+  modalOverlayStyle,
+  modalContentStyle,
+  modalTextStyle,
+  modalActionsStyle,
+  modalButtonPrimaryStyle,
+  modalButtonSecondaryStyle
 } from './styles/CreateABTestView.styles';
 
 const CreateABTestView: React.FC = () => {
+  const navigate = useNavigate(); 
   // Hover states for buttons will be managed within ActionButtons.tsx
   // Estados
   const [testName, setTestName] = useState('');
@@ -49,10 +59,14 @@ const CreateABTestView: React.FC = () => {
   const [loadingCampaignA, setLoadingCampaignA] = useState(false);
   const [loadingCampaignB, setLoadingCampaignB] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState(''); // Re-added for save confirmation
+  const [successMessage, setSuccessMessage] = useState(''); 
   const [testResults, setTestResults] = useState<TestResults | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [isGeneratingResults, setIsGeneratingResults] = useState(false);
+  const [showMinCampaignsModal, setShowMinCampaignsModal] = useState(false);
+
+  const currentUser = useUserStore(state => state.user); // Get current user object
+  const currentUserId = currentUser?.id; // Get user ID from user object
 
   // Función para hacer scroll a la sección de resultados
   const scrollToResults = useCallback(() => {
@@ -66,21 +80,50 @@ const CreateABTestView: React.FC = () => {
   const loadCampaigns = useCallback(async () => {
     setIsLoading(true);
     useLoadingStore.getState().startLoading();
+    setErrorMessage(''); 
+    setSuccessMessage(''); 
     
     try {
       const response = await campaignService.getAllCampaigns(1, 50);
-      console.log('Respuesta Strapi completa:', response);
       
       const formattedCampaigns = transformStrapiCollection<Campaign>(response);
-      console.log('Campañas formateadas:', formattedCampaigns);
       
-      // Filtrar la campaña "Gestión de Grupos de Contactos"
-      const filteredCampaigns = formattedCampaigns.filter(campaign => 
+      let userFilteredCampaigns: Campaign[] = [];
+      if (currentUserId) {
+        userFilteredCampaigns = formattedCampaigns.filter(campaign => {
+          let campaignOwnerId: number | string | undefined;
+          if (campaign.usuario && typeof campaign.usuario === 'object' && 'id' in campaign.usuario) {
+            // With improved typing, direct access should be possible
+            campaignOwnerId = campaign.usuario.id;
+          } else if (typeof campaign.usuario === 'number') { // campaign.usuario can also be a number
+            campaignOwnerId = campaign.usuario;
+          } else if (typeof campaign.usuario === 'string') { // Or a string, though less common for IDs
+            campaignOwnerId = campaign.usuario;
+          }
+          return campaignOwnerId === currentUserId;
+        });
+      } else {
+        console.warn('No current user ID found. Campaigns will be empty for A/B test selection.');
+      }
+      
+      const finalFilteredCampaigns = userFilteredCampaigns.filter(campaign => 
         campaign.nombre !== 'Gestión de Grupos de Contactos'
       );
       
-      setCampaigns(filteredCampaigns);
-      setSuccessMessage('Campañas cargadas con éxito.'); // Update success message states. Por favor intente nuevamente.');
+      if (finalFilteredCampaigns.length < 2) {
+        setShowMinCampaignsModal(true);
+      }
+
+      setCampaigns(finalFilteredCampaigns);
+
+      if (finalFilteredCampaigns.length === 0) {
+        toast.info('No se encontraron campañas para el usuario actual que puedan usarse en un Test A/B.');
+      } else if (finalFilteredCampaigns.length === 1) {
+        toast.warn(`Solo se encontró 1 campaña disponible. Necesitas al menos 2 para un Test A/B.`);
+      } else { // 2 or more campaigns
+        toast.success(`Se cargaron ${finalFilteredCampaigns.length} campañas para el Test A/B.`);
+      }
+
     } catch (error) {
       console.error('Error al cargar campañas:', error);
       setErrorMessage('No se pudieron cargar las campañas. Por favor intente nuevamente.');
@@ -88,7 +131,7 @@ const CreateABTestView: React.FC = () => {
       setIsLoading(false);
       useLoadingStore.getState().stopLoading();
     }
-  }, []);
+  }, [currentUserId]); 
 
   // Cargar campañas al montar el componente
   useEffect(() => {
@@ -114,7 +157,6 @@ const CreateABTestView: React.FC = () => {
     useLoadingStore.getState().startLoading();
     
     try {
-      // Buscar primero la campaña en las ya cargadas para evitar llamadas innecesarias a la API
       const existingCampaign = campaigns.find(c => c.id === campaignId);
       
       if (existingCampaign) {
@@ -122,12 +164,10 @@ const CreateABTestView: React.FC = () => {
         setCampaign(existingCampaign);
         setCampaignId(campaignId);
         
-        // Actualizar nombre del test si es necesario
         if (updateTestName && existingCampaign.asunto && !testName) {
           setTestName(`Comparación: ${existingCampaign.asunto}`);
         }
       } else {
-        // Si no la encontramos en las ya cargadas, hacer una llamada a la API
         console.log(`Cargando campaña ${campaignLabel} con ID:`, campaignId);
         const response = await campaignService.getCampaignById(campaignId);
         console.log(`Respuesta campaña ${campaignLabel}:`, response);
@@ -136,7 +176,6 @@ const CreateABTestView: React.FC = () => {
         console.log(`Campaña ${campaignLabel} formateada:`, formattedCampaign);
         
         if (formattedCampaign) {
-          // Asegurarse de que tiene todos los campos requeridos
           if (!formattedCampaign.estado) {
             formattedCampaign.estado = 'borrador';
           }
@@ -144,7 +183,6 @@ const CreateABTestView: React.FC = () => {
           setCampaign(formattedCampaign);
           setCampaignId(campaignId);
           
-          // Actualizar nombre del test si es necesario
           if (updateTestName && formattedCampaign.asunto && !testName) {
             setTestName(`Comparación: ${formattedCampaign.asunto}`);
           }
@@ -169,7 +207,7 @@ const CreateABTestView: React.FC = () => {
       setLoadingCampaignA,
       setCampaignAId,
       'A',
-      true // Actualizar nombre del test
+      true 
     );
   }, [loadCampaignDetails]);
 
@@ -181,25 +219,22 @@ const CreateABTestView: React.FC = () => {
       setLoadingCampaignB,
       setCampaignBId,
       'B',
-      false // No actualizar nombre del test
+      false 
     );
   }, [loadCampaignDetails]);
 
   // Validar datos antes de generar resultados
   const validateTestData = useCallback((): boolean => {
-    // Validar que ambas campañas estén seleccionadas
     if (!campaignA || !campaignB) {
       setErrorMessage('Debe seleccionar dos campañas para comparar.');
       return false;
     }
 
-    // Validar que se haya ingresado un nombre para la prueba
     if (!testName.trim()) {
       setErrorMessage('Debe ingresar un nombre para la prueba A/B.');
       return false;
     }
 
-    // Validar que no se esté comparando la misma campaña
     if (campaignA.id === campaignB.id) {
       setErrorMessage('No se puede comparar la misma campaña. Por favor seleccione dos campañas diferentes.');
       return false;
@@ -217,8 +252,7 @@ const CreateABTestView: React.FC = () => {
     setSuccessMessage(''); 
     setTestResults(null);
     setShowResults(false);
-    // Not using global loading store here to keep spinner logic self-contained for now
-
+    
     console.log('Attempting to generate A/B test results...');
     console.log('Campaign A:', campaignA);
     console.log('Campaign B:', campaignB);
@@ -226,25 +260,21 @@ const CreateABTestView: React.FC = () => {
     try {
       if (!campaignA || !campaignB) {
         setErrorMessage('Las campañas A y B deben estar seleccionadas.');
-        return; // Early exit if campaigns are not set
+        return; 
       }
 
-      // Simular la comparación de las campañas
       const newResults = abTestingService.generateTestResults(campaignA, campaignB, testName);
       console.log('Resultados de la comparación:', newResults);
       
       setTestResults(newResults);
       setShowResults(true); 
       
-      // Guardar en localStorage
       try {
         abTestingService.saveABTest(testName, campaignA, campaignB, newResults);
         setSuccessMessage('Resultados generados y guardados en localStorage con éxito.');
-        // No llamar a scrollToResults aquí, se llamará después del delay en finally
       } catch (saveError) {
         console.error('Error al guardar la prueba A/B en localStorage:', saveError);
         setErrorMessage('Resultados generados, pero error al guardar en localStorage.');
-        // Still show results even if save fails for now
       }
 
     } catch (error) {
@@ -252,11 +282,9 @@ const CreateABTestView: React.FC = () => {
       setErrorMessage('Error al generar los resultados. Por favor, intente de nuevo.');
       setShowResults(false);
     } finally {
-      // Simulate a 2-second loading time for spinner visibility
       setTimeout(() => {
         setIsGeneratingResults(false);
         console.log('Finished generating A/B test results attempt after delay. isGeneratingResults:', false);
-        // Scroll to results after delay and state update
         if (document.getElementById('results-section')) {
           scrollToResults();
         }
@@ -274,37 +302,33 @@ const CreateABTestView: React.FC = () => {
     setErrorMessage('');
     setSuccessMessage('');
 
-    // If there were results shown, attempt to delete them from localStorage
     if (testResults && testResults.testId) {
       try {
         const deleted = abTestingService.deleteTest(testResults.testId);
         if (deleted) {
           console.log(`A/B Test ${testResults.testId} deleted from localStorage.`);
-          // Optionally, set a success message for deletion if needed, though resetting fields might be enough UX
         } else {
           console.warn(`A/B Test ${testResults.testId} not found in localStorage or already deleted.`);
         }
       } catch (error) {
         console.error('Error deleting A/B Test from localStorage:', error);
-        // Optionally, set an error message for the deletion failure
       }
     }
 
     setTestResults(null);
     setShowResults(false);
-    setIsGeneratingResults(false); // Asegurar que el spinner se detenga si se resetea
+    setIsGeneratingResults(false); 
 
-    // Desplazar al inicio del formulario para mejorar UX al reiniciar
     const formElement = document.getElementById('test-name');
     if (formElement) {
       formElement.focus();
-      const yOffset = -80; // Ajuste para visibilidad del label
+      const yOffset = -80; 
       const y = formElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
       window.scrollTo({top: y, behavior: 'smooth'});
     } else {
       window.scrollTo({top: 0, behavior: 'smooth'});
     }
-  }, [testResults]); // Added testResults to dependency array
+  }, [testResults]); 
 
   return (
     <div style={viewStyle}>
@@ -394,6 +418,35 @@ const CreateABTestView: React.FC = () => {
           campaignA={campaignA}
           campaignB={campaignB}
         />
+      )}
+
+      {showMinCampaignsModal && (
+        <div style={modalOverlayStyle}> 
+          <div style={modalContentStyle}> 
+            <p style={modalTextStyle}> 
+              Necesitas tener al menos dos campañas disponibles para realizar un Test A/B.
+              <br />
+              Actualmente solo tienes {campaigns.length} campaña{campaigns.length === 1 ? '' : 's'} disponible{campaigns.length === 1 ? '' : 's'}.
+            </p>
+            <div style={modalActionsStyle}> 
+              <button 
+                style={modalButtonSecondaryStyle} 
+                onClick={() => setShowMinCampaignsModal(false)}
+              >
+                Entendido
+              </button>
+              <button 
+                style={modalButtonPrimaryStyle} 
+                onClick={() => {
+                  setShowMinCampaignsModal(false);
+                  navigate('/dashboard/campaigns'); 
+                }}
+              >
+                Ir a Campañas
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

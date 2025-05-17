@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../App.css';
 import Sidebar from '../components/Sidebar/Sidebar';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
@@ -27,6 +28,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 // --- Datos Estáticos (Movidos fuera) ---
 // TODO: Estos datos deberían venir de una API o estado global en una app real
+/* Comentado para evitar error de linting - variable no utilizada
 const emailChartData = {
   labels: ['Correo electrónicos abiertos', 'Correo electrónicos no abiertos'],
   datasets: [
@@ -40,8 +42,10 @@ const emailChartData = {
     },
   ],
 };
+*/
 
 // Definir ChartInstance fuera o importarla si es global
+/* Comentado para evitar error de linting - interfaz no utilizada
 interface ChartInstance {
   data: {
     labels: string[];
@@ -58,8 +62,10 @@ interface ChartInstance {
       };
     };
   };
-}
+};
+*/
 
+/* Comentado para evitar error de linting - variable no utilizada
 const emailChartOptions = {
   cutout: '70%',
   responsive: true,
@@ -98,18 +104,53 @@ const emailChartOptions = {
     },
   },
 };
+*/
 
+/* Comentado para evitar error de linting - variable no utilizada
 const campaignData = [
   { id: 1, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...' },
   { id: 2, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...' },
   { id: 3, fecha: 'DD/MM/AAAA', detalles: 'Campaña lorem ipsum...' },
 ];
+*/
 
 // Registramos los componentes necesarios para Chart.js (Podría moverse a App.tsx si es global)
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+// --- Mappings for URL paths and View names ---
+// Defined outside the component so they are stable and don't cause re-renders.
+const viewToPathMap: Record<string, string> = {
+  'Inicio': '/dashboard',
+  'Campañas': '/dashboard/campaigns',
+  'Contactos': '/dashboard/contacts',
+  'Metricas': '/dashboard/metrics',
+  'Capacitacion': '/dashboard/training',
+  'Soporte': '/dashboard/support',
+  'Perfil': '/dashboard/profile',
+  'Datos CRM': '/dashboard/crm-data', // Assuming path, adjust if different
+  'Pruebas A/B': '/dashboard/ab-testing',
+  'Administracion': '/dashboard/admin',
+};
+
+const pathToViewMap: Record<string, string> = {
+  '/dashboard': 'Inicio',
+  '/dashboard/': 'Inicio', // Handle trailing slash for dashboard root
+  '/dashboard/campaigns': 'Campañas',
+  '/dashboard/contacts': 'Contactos',
+  '/dashboard/metrics': 'Metricas',
+  '/dashboard/training': 'Capacitacion',
+  '/dashboard/support': 'Soporte',
+  '/dashboard/profile': 'Perfil',
+  '/dashboard/crm-data': 'Datos CRM',
+  '/dashboard/ab-testing': 'Pruebas A/B',
+  '/dashboard/admin': 'Administracion',
+};
+
 // --- Componente Principal Dashboard ---
 function Dashboard() {
+  const location = useLocation(); // Get location object
+  const navigate = useNavigate(); // Get navigate function
+
   // Estado para controlar la vista activa
   const [activeView, setActiveView] = useState('Inicio');
   const [isTransitioning, setIsTransitioning] = useState(false); 
@@ -117,21 +158,36 @@ function Dashboard() {
   const nodeRef = useRef(null); // Ref para transición principal
   const createCampaignNodeRef = useRef(null); // Ref para transición de slide
 
+  // Effect to update activeView based on URL changes
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const newView = pathToViewMap[currentPath] || 'Inicio'; // Default to 'Inicio' if path not mapped
+
+    if (newView !== activeView) {
+      // Logic adapted from original handleViewChange for smooth transitions
+      if (showCreateCampaign) {
+        setShowCreateCampaign(false);
+        // Delay setting active view to allow create campaign to transition out
+        setTimeout(() => {
+          setActiveView(newView);
+        }, 50); 
+      } else {
+        setIsTransitioning(true);
+        setActiveView(newView); // Set active view immediately for content swap
+        // Transition effect will apply to the new content
+        setTimeout(() => {
+          setIsTransitioning(false); // End transition state after visual effect duration
+        }, 300); 
+      }
+    }
+  }, [location.pathname, activeView, showCreateCampaign]); // Dependencies - Removed pathToViewMap as it's now stable
+
   // Función para cambiar la vista con animación
   const handleViewChange = (viewName: string) => {
-    if (viewName === activeView) return;
-
-    if (showCreateCampaign) {
-      setShowCreateCampaign(false);
-      setTimeout(() => {
-        setActiveView(viewName);
-      }, 50);
-    } else {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setActiveView(viewName);
-        setIsTransitioning(false);
-      }, 300);
+    const targetPath = viewToPathMap[viewName];
+    if (targetPath && targetPath !== location.pathname) {
+      navigate(targetPath);
+      // The useEffect above will handle setting activeView and transitions
     }
   };
 
@@ -153,11 +209,7 @@ function Dashboard() {
   const renderActiveViewContent = () => {
     switch (activeView) {
       case 'Inicio':
-        return <InicioView 
-                  emailChartData={emailChartData} 
-                  emailChartOptions={emailChartOptions} 
-                  campaignData={campaignData} 
-               />;
+        return <InicioView />;
       case 'Campañas':
         return <CampaignsView onShowCreate={handleShowCreateCampaign} />;
       case 'Contactos':
@@ -186,7 +238,7 @@ function Dashboard() {
 
   return (
     <DashboardLayout
-      sidebar={<Sidebar activeView={activeView} onNavigate={handleViewChange} />}
+      sidebar={<Sidebar activeView={activeView} onNavigate={handleViewChange} />} // Pass the synchronized activeView
     >
       {/* El contenido principal ahora es el children del Layout */}
       {/* Contenedor Wrapper para manejar posicionamiento absoluto y overflow */}

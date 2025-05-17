@@ -11,7 +11,7 @@ export interface StrapiRichTextBlock {
   }[];
   [key: string]: unknown; // Para otras propiedades que pueda tener
 }
-type StrapiAttributes<T> = {
+export type StrapiAttributes<T> = {
   id: number;
 } & ({
   attributes: T;

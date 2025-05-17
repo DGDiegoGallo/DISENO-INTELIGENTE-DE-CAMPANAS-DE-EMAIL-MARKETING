@@ -31,18 +31,9 @@ const CampaignDataSimulator: React.FC = () => {
       // Usar axios directamente para hacer la solicitud PUT con documentId
       const API_URL = 'http://34.238.122.213:1337';
       
-      // Obtener el token de autenticación del localStorage
-      const authData = localStorage.getItem('auth-storage');
-      let token = '';
-      if (authData) {
-        const parsedData = JSON.parse(authData);
-        token = parsedData?.state?.token;
-      }
-      
-      // Configurar headers con el token de autenticación
+      // Configurar headers sin el token de autenticación
       const headers = {
         'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
       };
       
       // Hacer la solicitud PUT utilizando documentId

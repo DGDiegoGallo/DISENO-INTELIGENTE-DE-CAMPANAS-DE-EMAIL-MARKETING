@@ -56,7 +56,7 @@ export const useAuthStore = create<AuthState>()(
             });
             
             // Configurar el token para futuras solicitudes
-            axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.jwt}`;
+            // axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.jwt}`;
           }
         } catch (error) {
           let errorMessage = 'Error al iniciar sesión';
@@ -101,7 +101,7 @@ export const useAuthStore = create<AuthState>()(
             });
             
             // Configurar el token para futuras solicitudes
-            axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.jwt}`;
+            // axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.jwt}`;
             
             // Si hay campos adicionales del perfil, actualizarlos
             const profileData: Partial<StrapiUser> = {};
@@ -150,7 +150,7 @@ export const useAuthStore = create<AuthState>()(
         // Borrar token y usuario
         localStorage.removeItem('token');
         // Limpiar el token de los headers de Axios
-        delete axios.defaults.headers.common['Authorization'];
+        // delete axios.defaults.headers.common['Authorization'];
         
         set({
           token: null,
@@ -220,9 +220,11 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Configurar axios con el token al iniciar la aplicación
+/*
 const { token } = useAuthStore.getState();
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
+*/
 
 export default useAuthStore;

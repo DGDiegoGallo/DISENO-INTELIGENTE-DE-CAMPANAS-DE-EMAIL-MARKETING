@@ -43,13 +43,36 @@ const UserCampaignList: React.FC<UserCampaignListProps> = ({
       // Asegurarnos de que los datos tengan el formato correcto
       const formattedCampaigns = response.data.map(item => {
         // Si la API devuelve datos en formato Strapi v4 (con attributes), adaptarlos
-        if ('attributes' in item) {
-          return {
-            id: item.id,
-            ...item.attributes
-          } as Campaign;
-        }
-        return item as Campaign;
+        const source = 'attributes' in item ? item.attributes : item;
+        // Ensure id from item itself is prioritized if item.attributes also has id
+        const campaignId = item.id !== undefined ? item.id : ((source as unknown) as Record<string, unknown>).id as number;
+
+        return {
+          id: campaignId,
+          nombre: source.nombre,
+          Fechas: source.Fechas,
+          estado: source.estado,
+          asunto: source.asunto,
+          contenidoHTML: source.contenidoHTML,
+          campanaJSON: typeof source.campanaJSON === 'object' ? source.campanaJSON : undefined,
+          contactos: source.contactos,
+          // Handle gruposdecontactosJSON: DetailedCampaign has it as GruposDeContactosJSON | null
+          // campaignService.Campaign expects Record<string, unknown> | undefined
+          gruposdecontactosJSON: typeof source.gruposdecontactosJSON === 'object' && source.gruposdecontactosJSON !== null 
+                                 ? source.gruposdecontactosJSON 
+                                 : undefined,
+          interaccion_destinatario: typeof source.interaccion_destinatario === 'object' ? source.interaccion_destinatario : undefined,
+          se_registro_en_pagina: source.se_registro_en_pagina,
+          dinero_gastado: source.dinero_gastado,
+          // email_destinatario is not in DetailedCampaign by default, but campaignService.Campaign has it.
+          // If your DetailedCampaign might have it, map it here, otherwise undefined.
+          email_destinatario: ((source as unknown) as Record<string, unknown>).email_destinatario as string | undefined, 
+          createdAt: source.createdAt,
+          updatedAt: source.updatedAt,
+          publishedAt: source.publishedAt,
+          // usuario is complex, ensure it's mapped if needed or handle its absence
+          // For now, casting as Campaign implies the service's Campaign type structure is met.
+        } as Campaign;
       });
       
       setCampaigns(formattedCampaigns);

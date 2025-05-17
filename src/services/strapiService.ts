@@ -1,17 +1,12 @@
 import axios from 'axios';
-import authService from './auth/authService';
+// import authService from './auth/authService'; // Removed unused import
 
 // URL base de la API de Strapi
 export const API_URL = 'http://34.238.122.213:1337';
 
 // Configuración para las solicitudes autenticadas
 const getAuthConfig = () => {
-  const token = authService.getToken();
-  return {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : '',
-    },
-  };
+  return {};
 };
 
 // Importar interfaces desde la carpeta de interfaces
@@ -33,9 +28,15 @@ const strapiService = {
           return acc;
         }, {} as Record<string, string>)
       ).toString()}` : '';
+      const url = `${API_URL}/api/${endpoint}${queryString}`;
+      const config = getAuthConfig();
+
+      console.log(`[StrapiService] Requesting URL for ${endpoint}:`, url);
+      console.log(`[StrapiService] Request config for ${endpoint}:`, JSON.stringify(config, null, 2));
+
       const response = await axios.get<StrapiResponse<T>>(
-        `${API_URL}/api/${endpoint}${queryString}`,
-        getAuthConfig()
+        url,
+        config
       );
       return response.data;
     } catch (error) {
@@ -160,7 +161,6 @@ const strapiService = {
         {
           ...getAuthConfig(),
           headers: {
-            ...getAuthConfig().headers,
             'Content-Type': 'multipart/form-data',
           },
         }

@@ -116,9 +116,24 @@ export interface StrapiCampaign {
   };
 }
 
-// Interfaz para la campaña procesada (con ID incluido)
-export interface ProcessedCampaign extends StrapiCampaign {
+// Interfaz para el usuario procesado y aplanado desde Strapi
+export interface ProcessedStrapiUser {
   id: number;
+  documentId?: string; // Hacer opcionales si no siempre están
+  username: string;
+  email: string;
+  provider?: string;
+  confirmed?: boolean;
+  blocked?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
+}
+
+// Interfaz para la campaña procesada (con ID incluido y usuario aplanado)
+export interface ProcessedCampaign extends Omit<StrapiCampaign, 'usuario'> {
+  id: number; // ID de la campaña
+  usuario?: ProcessedStrapiUser | number | string; // Usuario puede ser objeto aplanado, ID, o no estar.
 }
 
 // Interfaces para las visualizaciones de gráficos

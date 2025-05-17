@@ -80,11 +80,17 @@ export const getCrmContacts = async (): Promise<CrmAnalysisContact[]> => {
     // Filtrar las campañas para mostrar solo las del usuario actual
     const userCampaigns = currentUserId 
       ? campaigns.filter(campaign => {
-          // Verificar si el campaign.usuario es un objeto o un ID
-          const userId = typeof campaign.usuario === 'object' 
-            ? campaign.usuario?.data?.id 
-            : campaign.usuario;
-          return userId === currentUserId;
+          let campaignOwnerId: number | string | undefined;
+          if (typeof campaign.usuario === 'object' && campaign.usuario !== null) {
+            // Assuming extractStrapiData flattens the user object
+            campaignOwnerId = campaign.usuario.id;
+          } else if (typeof campaign.usuario === 'number' || typeof campaign.usuario === 'string') {
+            // If campaign.usuario is already a direct ID
+            campaignOwnerId = campaign.usuario;
+          }
+          
+          console.log(`[DEBUG CRM Filter] Campaign ID: ${campaign.id}, Campaign UserID: ${campaignOwnerId} (Type: ${typeof campaignOwnerId}), Current UserID: ${currentUserId} (Type: ${typeof currentUserId})`);
+          return campaignOwnerId === currentUserId;
         })
       : campaigns;
       
