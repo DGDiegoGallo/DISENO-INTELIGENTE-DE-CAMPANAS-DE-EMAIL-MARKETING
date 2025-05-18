@@ -3,6 +3,7 @@ import './App.css';
 import Dashboard from './pages/dashboard';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import ProyectosPage from './pages/ProyectosPage';
 import RegisterPage from './pages/RegisterPage';
 import NotFoundView from './components/views/NotFoundView';
 import Footer from './components/Footer/Footer';
@@ -69,6 +70,7 @@ function App() {
             } />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/proyectos" element={<ProyectosPage />} />
             <Route path="*" element={<NotFoundView />} />
           </Routes>
         </div>
