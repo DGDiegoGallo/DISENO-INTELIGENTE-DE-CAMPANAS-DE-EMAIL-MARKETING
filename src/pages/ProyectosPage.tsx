@@ -6,15 +6,15 @@ import Navbar from '../components/Navbar/Navbar';
 interface Proyecto {
   id: number;
   attributes: {
-    nombre: string;
-    Fechas: string;
-    estado: string;
-    asunto: string;
-    contenidoHTML: string;
+    nombre?: string;
+    Fechas?: string;
+    estado?: string;
+    asunto?: string;
+    contenidoHTML?: string;
     createdAt: string;
     updatedAt: string;
     publishedAt: string;
-    [key: string]: string | number | boolean | null | undefined; // Para otros campos que puedan existir
+    [key: string]: string | number | boolean | null | undefined | object; // Para otros campos que puedan existir
   };
 }
 
@@ -43,7 +43,12 @@ const ProyectosPage: React.FC = () => {
       try {
         const response = await axios.get<ProyectosResponse>('http://34.238.122.213:1337/api/proyecto-56s');
         console.log('Datos recibidos:', response.data);
-        setProyectos(response.data.data);
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          setProyectos(response.data.data);
+        } else {
+          console.error('Formato de datos inesperado:', response.data);
+          setError('Los datos recibidos no tienen el formato esperado.');
+        }
       } catch (err) {
         console.error('Error al obtener proyectos:', err);
         setError('Error al cargar los proyectos. Por favor, intente más tarde.');
@@ -88,16 +93,16 @@ const ProyectosPage: React.FC = () => {
               <div className="col-md-6 col-lg-4 mb-4" key={proyecto.id}>
                 <div className="card h-100 shadow-sm">
                   <div className="card-body">
-                    <h5 className="card-title">{proyecto.attributes.nombre || 'Sin título'}</h5>
+                    <h5 className="card-title">{proyecto.attributes?.nombre || 'Sin título'}</h5>
                     <h6 className="card-subtitle mb-2 text-muted">
-                      Estado: {proyecto.attributes.estado || 'No definido'}
+                      Estado: {proyecto.attributes?.estado || 'No definido'}
                     </h6>
                     <p className="card-text">
-                      <strong>Asunto:</strong> {proyecto.attributes.asunto || 'Sin asunto'}
+                      <strong>Asunto:</strong> {proyecto.attributes?.asunto || 'Sin asunto'}
                     </p>
                     <p className="card-text">
                       <strong>Fecha:</strong> {
-                        proyecto.attributes.Fechas ? 
+                        proyecto.attributes?.Fechas ? 
                         new Date(proyecto.attributes.Fechas).toLocaleDateString() : 
                         'No definida'
                       }
@@ -106,7 +111,9 @@ const ProyectosPage: React.FC = () => {
                   <div className="card-footer bg-transparent">
                     <small className="text-muted">
                       ID: {proyecto.id} | Actualizado: {
-                        new Date(proyecto.attributes.updatedAt).toLocaleDateString()
+                        proyecto.attributes?.updatedAt ? 
+                        new Date(proyecto.attributes.updatedAt).toLocaleDateString() : 
+                        'No disponible'
                       }
                     </small>
                   </div>
