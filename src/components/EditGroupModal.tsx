@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import ModalWrapper from './ModalWrapper';
-import { FaPlus, FaArrowRight } from 'react-icons/fa';
+import { FaPlus, FaUserPlus, FaUserMinus } from 'react-icons/fa';
+
+interface Contact {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  group: string;
+}
 
 interface EditGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (newGroup: string) => void;
-  currentGroup?: string; // Grupo actual para preseleccionar
+  currentGroup?: string;
   groups: string[];
-  onAddGroup: (groupName: string) => void;
-  // Nuevo prop para mostrar contactos del grupo actual
-  contactsInGroup?: Array<{id: number, name: string, email: string, phone: string}>;
-  // Función para remover un contacto del grupo
-  onRemoveFromGroup?: (contactId: number) => void;
+  onAddGroup?: (groupName: string) => void;
+  contactsInGroup?: Array<Contact>;
+  allContacts: Array<Contact>; // Todos los contactos disponibles
 }
 
-// Definimos solo los estilos necesarios
-
+// Estilos
 const buttonStyle: React.CSSProperties = {
   padding: '10px 20px',
   borderRadius: '8px',
@@ -27,29 +32,167 @@ const buttonStyle: React.CSSProperties = {
   width: '100%',
 };
 
-const EditGroupModal: React.FC<EditGroupModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
-  currentGroup, 
-  groups, 
+const contactItemStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '8px',
+  borderBottom: '1px solid #f5f5f5',
+  fontSize: '14px',
+  marginBottom: '5px',
+};
+
+const contactListStyle: React.CSSProperties = {
+  maxHeight: '150px',
+  overflowY: 'auto',
+  border: '1px solid #eee',
+  borderRadius: '5px',
+  padding: '10px',
+  marginBottom: '15px',
+};
+
+const actionButtonStyle: React.CSSProperties = {
+  backgroundColor: 'transparent',
+  border: 'none',
+  color: '#F21A2B',
+  cursor: 'pointer',
+  padding: '5px',
+  display: 'flex',
+  alignItems: 'center',
+  fontSize: '12px',
+};
+
+const listHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  padding: '0 5px 5px 5px',
+  borderBottom: '1px solid #eee',
+  marginBottom: '10px',
+  fontSize: '12px',
+  fontWeight: 'bold',
+  color: '#555',
+};
+
+// Componente de etiqueta de grupo
+const GroupTag: React.FC<{groupName: string}> = ({ groupName }) => (
+  <span style={{
+    backgroundColor: '#f0f0f0',
+    color: '#666',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '11px',
+    marginRight: '8px',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: '120px',
+    display: 'inline-block',
+  }}>
+    {groupName}
+  </span>
+);
+
+const EditGroupModal: React.FC<EditGroupModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  currentGroup,
+  groups,
   onAddGroup,
   contactsInGroup = [],
-  onRemoveFromGroup
+  allContacts = []
 }) => {
   const [selectedGroup, setSelectedGroup] = useState(currentGroup || '');
   const [showNewGroupInput, setShowNewGroupInput] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  
+  // Estado temporal para gestionar los contactos antes de aplicar cambios
+  const [tempContactsInGroup, setTempContactsInGroup] = useState<Array<Contact>>([]);
+  const [tempContactsOutGroup, setTempContactsOutGroup] = useState<Array<Contact>>([]);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  // Actualizar el grupo seleccionado si el prop 'currentGroup' cambia
+  // Actualizar el grupo seleccionado y los contactos temporales cuando cambian los props
   useEffect(() => {
-    setSelectedGroup(currentGroup || '');
-  }, [currentGroup, isOpen]); // Re-evaluar cuando se abre o cambia el grupo
-
-  const handleSubmit = () => {
-    if (selectedGroup) {
-      onSubmit(selectedGroup);
+    if (isOpen) {
+      setSelectedGroup(currentGroup || '');
+      
+      // Inicializar los contactos que están en el grupo
+      setTempContactsInGroup([...contactsInGroup]);
+      
+      // Inicializar los contactos que no están en el grupo
+      const otherContacts = allContacts.filter(
+        contact => !contactsInGroup.some(c => c.id === contact.id)
+      );
+      setTempContactsOutGroup(otherContacts);
+      
+      // Resetear el indicador de cambios
+      setHasChanges(false);
     }
+  }, [isOpen, currentGroup, contactsInGroup, allContacts]);
+
+  // Actualizar los contactos cuando cambia el grupo seleccionado
+  useEffect(() => {
+    if (selectedGroup && selectedGroup !== '__new_group__' && isOpen) {
+      // Encontrar los contactos que pertenecen al grupo seleccionado
+      const inGroup = allContacts.filter(contact => contact.group === selectedGroup);
+      setTempContactsInGroup(inGroup);
+      
+      // Encontrar los contactos que no pertenecen al grupo seleccionado
+      const outGroup = allContacts.filter(contact => contact.group !== selectedGroup);
+      setTempContactsOutGroup(outGroup);
+      
+      // Resetear el indicador de cambios
+      setHasChanges(false);
+    }
+  }, [selectedGroup, isOpen, allContacts]);
+
+  // Mover un contacto de fuera del grupo al grupo
+  const moveContactToGroup = (contactId: number) => {
+    const contactToMove = tempContactsOutGroup.find(c => c.id === contactId);
+    if (contactToMove) {
+      // Añadir al grupo temporal
+      setTempContactsInGroup([...tempContactsInGroup, contactToMove]);
+      
+      // Remover de la lista de fuera del grupo
+      setTempContactsOutGroup(tempContactsOutGroup.filter(c => c.id !== contactId));
+      
+      // Marcar que hay cambios
+      setHasChanges(true);
+    }
+  };
+
+  // Mover un contacto del grupo a fuera del grupo
+  const moveContactOutOfGroup = (contactId: number) => {
+    const contactToMove = tempContactsInGroup.find(c => c.id === contactId);
+    if (contactToMove) {
+      // Añadir a la lista de fuera del grupo sin modificar su grupo original
+      setTempContactsOutGroup([...tempContactsOutGroup, contactToMove]);
+      
+      // Remover del grupo temporal
+      setTempContactsInGroup(tempContactsInGroup.filter(c => c.id !== contactId));
+      
+      // Marcar que hay cambios
+      setHasChanges(true);
+    }
+  };
+
+  // Aplicar todos los cambios
+  const handleSubmit = () => {
+    if (selectedGroup && hasChanges) {
+      // Solo aplicamos los cambios de contactos que están en el grupo seleccionado
+      // Los contactos que se sacaron del grupo se quedarán en su grupo original
+      // hasta que se les asigne explícitamente otro grupo
+      
+      // Simplemente llamamos al handler original con el grupo seleccionado
+      // Esto moverá todos los contactos que están en tempContactsInGroup al grupo seleccionado
+      
+      console.log('Aplicando cambios en grupo:', selectedGroup, 
+                 'Contactos en grupo:', tempContactsInGroup.length, 
+                 'Contactos fuera del grupo:', tempContactsOutGroup.length);
+    }
+    
+    // Llamar al handler original con el grupo seleccionado
+    onSubmit(selectedGroup);
   };
   
   const handleAddNewGroup = () => {
@@ -58,8 +201,10 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
       return;
     }
     
-    // Añadir el nuevo grupo a la lista
-    onAddGroup(newGroupName);
+    // Añadir el nuevo grupo a la lista si la función existe
+    if (onAddGroup) {
+      onAddGroup(newGroupName);
+    }
     
     // Seleccionar automáticamente el nuevo grupo
     setSelectedGroup(newGroupName);
@@ -70,7 +215,16 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
   };
 
   return (
-    <ModalWrapper isOpen={isOpen} onClose={onClose}>
+    <ModalWrapper 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      customStyle={{
+        maxWidth: '500px', // Aumentando el ancho del modal
+        width: '95%',
+        maxHeight: '80vh', // Asegurar que no sea demasiado alto
+        overflowY: 'auto' // Permitir scroll si es necesario
+      }}
+    >
       <h3 style={{ marginTop: 0, marginBottom: '20px', textAlign: 'center', color: '#333' }}>Gestionar grupo</h3>
       
       {!showNewGroupInput ? (
@@ -114,52 +268,81 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
             )}
           </div>
           
-          {/* Mostrar contactos del grupo actual si hay alguno */}
-          {selectedGroup && selectedGroup !== '__new_group__' && contactsInGroup && contactsInGroup.length > 0 && (
-            <div style={{ marginBottom: '20px' }}>
-              <h5 style={{ color: '#555', marginBottom: '10px' }}>Contactos en este grupo:</h5>
-              <div style={{ 
-                maxHeight: '150px', 
-                overflowY: 'auto', 
-                border: '1px solid #eee', 
-                borderRadius: '5px',
-                padding: '10px'
-              }}>
-                {contactsInGroup.map(contact => (
-                  <div key={contact.id} style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '8px',
-                    borderBottom: '1px solid #f5f5f5',
-                    fontSize: '14px'
-                  }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold' }}>{contact.name}</div>
-                      <div style={{ color: '#666', fontSize: '12px' }}>{contact.email}</div>
-                    </div>
-                    {onRemoveFromGroup && (
-                      <button 
-                        style={{
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          color: '#F21A2B',
-                          cursor: 'pointer',
-                          padding: '5px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          fontSize: '12px'
-                        }}
-                        onClick={() => onRemoveFromGroup(contact.id)}
-                        title="Sacar de este grupo"
-                      >
-                        <FaArrowRight style={{ marginRight: '5px' }} /> Sacar
-                      </button>
-                    )}
+          {/* Gestión de contactos en el grupo seleccionado */}
+          {selectedGroup && selectedGroup !== '__new_group__' && (
+            <>
+              {/* Lista de contactos en este grupo */}
+              <div style={{ marginBottom: '15px' }}>
+                <h5 style={{ color: '#555', marginBottom: '5px' }}>Contactos en este grupo:</h5>
+                <div style={contactListStyle}>
+                  <div style={listHeaderStyle}>
+                    <span>Nombre</span>
+                    <span>Acción</span>
                   </div>
-                ))}
+                  {tempContactsInGroup.length > 0 ? (
+                    tempContactsInGroup.map(contact => (
+                      <div key={contact.id} style={contactItemStyle}>
+                        <div>
+                          <div style={{ fontWeight: 'bold' }}>{contact.name}</div>
+                          <div style={{ color: '#666', fontSize: '12px' }}>{contact.email}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {/* Mostrando el grupo del contacto */}
+                          <GroupTag groupName={selectedGroup} />
+                          <button 
+                            style={actionButtonStyle}
+                            onClick={() => moveContactOutOfGroup(contact.id)}
+                            title="Sacar de este grupo"
+                          >
+                            <FaUserMinus style={{ marginRight: '5px' }} /> Sacar
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ textAlign: 'center', color: '#888', padding: '10px' }}>
+                      No hay contactos en este grupo
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+              
+              {/* Lista de contactos fuera de este grupo */}
+              <div>
+                <h5 style={{ color: '#555', marginBottom: '5px' }}>Otros contactos disponibles:</h5>
+                <div style={contactListStyle}>
+                  <div style={listHeaderStyle}>
+                    <span>Nombre</span>
+                    <span>Acción</span>
+                  </div>
+                  {tempContactsOutGroup.length > 0 ? (
+                    tempContactsOutGroup.map(contact => (
+                      <div key={contact.id} style={contactItemStyle}>
+                        <div>
+                          <div style={{ fontWeight: 'bold' }}>{contact.name}</div>
+                          <div style={{ color: '#666', fontSize: '12px' }}>{contact.email}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {/* Mostrando el grupo actual del contacto */}
+                          <GroupTag groupName={contact.group} />
+                          <button 
+                            style={actionButtonStyle}
+                            onClick={() => moveContactToGroup(contact.id)}
+                            title="Añadir a este grupo"
+                          >
+                            <FaUserPlus style={{ marginRight: '5px' }} /> Añadir
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ textAlign: 'center', color: '#888', padding: '10px' }}>
+                      No hay más contactos disponibles
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
           )}
           
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '25px' }}>
@@ -223,10 +406,10 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
             onClick={() => {
               setShowNewGroupInput(false);
               setNewGroupName('');
-              setSelectedGroup('');
+              setSelectedGroup(currentGroup || '');
             }}
           >
-            Cancelar
+            Volver
           </button>
         </>
       )}

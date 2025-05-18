@@ -1,0 +1,120 @@
+.admin-campaigns-view-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+/* Animaciones para el modal */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.admin-campaigns-view-container .card {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.admin-campaigns-view-container .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 12px 20px;
+}
+
+.admin-campaigns-view-container .card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-campaigns-view-container .btn-danger {
+  background-color: #F21A2B;
+  border-color: #F21A2B;
+}
+
+.admin-campaigns-view-container .btn-outline-secondary:hover {
+  background-color: #F21A2B;
+  border-color: #F21A2B;
+  color: white;
+}
+
+.admin-campaigns-view-container .badge.bg-primary {
+  background-color: #282A5B !important;
+}
+
+.admin-campaigns-view-container .text-primary {
+  color: #282A5B !important;
+}
+
+.admin-campaigns-view-container .text-success {
+  color: #28a745 !important;
+}
+
+.admin-campaigns-view-container .text-info {
+  color: #17a2b8 !important;
+}
+
+.admin-campaigns-view-container .text-warning {
+  color: #ffc107 !important;
+}
+
+.admin-campaigns-view-container .text-danger {
+  color: #F21A2B !important;
+}
+
+.admin-campaigns-view-container .metric-card {
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.admin-campaigns-view-container .metric-card h3 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.admin-campaigns-view-container .metric-card p {
+  font-size: 14px;
+  color: #6c757d;
+  margin: 0;
+}
+
+.admin-campaigns-view-container .table th {
+  font-weight: 600;
+  color: #495057;
+}
+
+.admin-campaigns-view-container .table td {
+  vertical-align: middle;
+}
+
+.admin-campaigns-view-container .modal-content {
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.admin-campaigns-view-container .modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.admin-campaigns-view-container .modal-title {
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-campaigns-view-container .btn-filter {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}

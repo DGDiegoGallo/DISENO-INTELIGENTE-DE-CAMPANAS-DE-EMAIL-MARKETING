@@ -4,6 +4,7 @@ interface ModalWrapperProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  customStyle?: React.CSSProperties;
 }
 
 const overlayStyle: React.CSSProperties = {
@@ -29,7 +30,7 @@ const modalContentStyle: React.CSSProperties = {
   width: '90%',
 };
 
-const ModalWrapper: React.FC<ModalWrapperProps> = ({ isOpen, onClose, children }) => {
+const ModalWrapper: React.FC<ModalWrapperProps> = ({ isOpen, onClose, children, customStyle }) => {
   if (!isOpen) {
     return null;
   }
@@ -41,7 +42,7 @@ const ModalWrapper: React.FC<ModalWrapperProps> = ({ isOpen, onClose, children }
 
   return (
     <div style={overlayStyle} onClick={onClose}> {/* Cierra al hacer clic fuera */} 
-      <div style={modalContentStyle} onClick={handleContentClick}>
+      <div style={{...modalContentStyle, ...customStyle}} onClick={handleContentClick}>
         {children}
       </div>
     </div>

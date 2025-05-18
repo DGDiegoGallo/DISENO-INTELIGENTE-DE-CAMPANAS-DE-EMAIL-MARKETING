@@ -25,9 +25,14 @@ const LoginPage: React.FC = () => {
       setRememberMe(true);
     }
 
-    // Si ya está autenticado, redirigir al dashboard
+    // Si ya está autenticado, redirigir al dashboard o a la vista de administración según el rol
     if (checkAuth()) {
-      navigate('/dashboard');
+      const userRole = useUserStore.getState().user?.rol;
+      if (userRole === 'admin') {
+        navigate('/dashboard/admin');
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [navigate, checkAuth]);
 
@@ -61,9 +66,14 @@ const LoginPage: React.FC = () => {
           token: 'mock-jwt-for-demo-purposes' // Token JWT simulado
         });
 
-        // 4. Si el login simulado fue exitoso, redirigir
+        // 4. Si el login simulado fue exitoso, redirigir según el rol
         if (loginSuccess) {
-          window.location.href = '/dashboard';
+          // Verificar si el usuario es administrador
+          if (user.role?.name === 'admin' || user.rol === 'admin') {
+            window.location.href = '/dashboard/admin';
+          } else {
+            window.location.href = '/dashboard';
+          }
         } else {
           setError('Error al inicializar la sesión del usuario');
         }

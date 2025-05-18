@@ -99,11 +99,10 @@ const CampaignDataSimulator: React.FC<CampaignDataSimulatorProps> = ({ onDataSim
     return Math.random() > 0.5;
   };
 
-  // Genera un valor aleatorio para dinero_gastado (entre 0 y 5000)
+  // Genera un valor aleatorio para dinero_gastado (entre 0 y 500)
   const generateRandomSpending = (): number => {
-    const baseAmount = Math.floor(Math.random() * 1000);
-    const multiplier = Math.floor(Math.random() * 5) + 1;
-    return baseAmount * multiplier;
+    // Generar un número aleatorio entre 0 y 499
+    return Math.floor(Math.random() * 500);
   };
 
   // Genera datos aleatorios de interacción para un email
@@ -128,7 +127,8 @@ const CampaignDataSimulator: React.FC<CampaignDataSimulatorProps> = ({ onDataSim
       return {
         interaccion_destinatario: {},
         se_registro_en_pagina: false,
-        dinero_gastado: "0"
+        dinero_gastado: "0",
+        estado: "enviado" // Cambiar el estado a enviado
       };
     }
 
@@ -158,7 +158,8 @@ const CampaignDataSimulator: React.FC<CampaignDataSimulatorProps> = ({ onDataSim
     return {
       interaccion_destinatario: interactionData,
       se_registro_en_pagina: anyRegistration,
-      dinero_gastado: totalSpent.toString()
+      dinero_gastado: totalSpent.toString(),
+      estado: "enviado" // Cambiar el estado a enviado
     };
   };
 

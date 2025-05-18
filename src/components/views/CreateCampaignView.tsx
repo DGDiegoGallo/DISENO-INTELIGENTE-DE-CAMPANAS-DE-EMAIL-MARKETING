@@ -64,15 +64,117 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
 
   // Cargar datos guardados del localStorage al iniciar
   useEffect(() => {
-    // Cargar grupos disponibles
-    const allLoadedGroups = contactsService.getAllGroups();
-    const filteredGroups = allLoadedGroups.filter(group => group !== 'General'); // Filter out 'General'
-    setAvailableGroups(filteredGroups);
-
-    // If no groups are available (after filtering), show the new modal
-    if (filteredGroups.length === 0) {
-      setShowNoGroupsAvailableModal(true);
-    }
+    // Función para cargar grupos desde Strapi
+    const fetchContactGroups = async () => {
+      try {
+        setFormState(prev => ({ ...prev, isLoading: true }));
+        useLoadingStore.getState().startLoading('Cargando grupos de contactos...');
+        
+        // Obtener el usuario actual
+        const currentUser = authService.getCurrentUser();
+        const userId = currentUser?.id || 56; // Valor por defecto si no hay usuario
+        
+        console.log('Usuario actual en CreateCampaignView:', currentUser);
+        console.log('ID de usuario para consulta de grupos:', userId);
+        
+        // Primero cargar grupos desde localStorage como respaldo inicial
+        const localGroups = contactsService.getAllGroups().filter(group => group !== 'General');
+        setAvailableGroups(localGroups); // Establecer grupos locales inicialmente
+        
+        // Consultar si existe el registro "Gestión de Grupos de Contactos"
+        const API_URL = 'http://34.238.122.213:1337';
+        const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userId}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
+        
+        console.log('Consultando URL para obtener grupos de contactos:', url);
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+          const jsonResponse = await response.json();
+          console.log('Respuesta completa de Strapi (Gestión de Grupos):', jsonResponse);
+          
+          if (jsonResponse.data && jsonResponse.data.length > 0) {
+            interface StrapiContactItem {
+              nombre?: string;
+              gruposdecontactosJSON?: {
+                grupos?: Array<{
+                  id: string;
+                  nombre: string;
+                  contactos: Array<{
+                    nombre: string;
+                    email: string;
+                    telefono: string;
+                  }>;
+                }>;
+              };
+            }
+            
+            const contactsData = jsonResponse.data.find((item: StrapiContactItem) => 
+              item && 
+              item.nombre === 'Gestión de Grupos de Contactos' &&
+              item.gruposdecontactosJSON && 
+              item.gruposdecontactosJSON.grupos
+            );
+            
+            if (contactsData && contactsData.gruposdecontactosJSON && contactsData.gruposdecontactosJSON.grupos) {
+              console.log('Datos de grupos encontrados en Strapi:', contactsData.gruposdecontactosJSON.grupos);
+              
+              // Extraer nombres de grupos desde Strapi
+              interface GroupItem {
+                id: string;
+                nombre: string;
+                contactos: Array<{
+                  nombre: string;
+                  email: string;
+                  telefono: string;
+                }>;
+              }
+              
+              const strapiGroupNames = contactsData.gruposdecontactosJSON.grupos.map((group: GroupItem) => group.nombre);
+              
+              // Combinar con grupos locales
+              const allLoadedGroups = contactsService.getAllGroups();
+              const combinedGroups = [...new Set([...allLoadedGroups, ...strapiGroupNames])];
+              
+              // Filtrar el grupo General
+              const filteredGroups = combinedGroups.filter(group => group !== 'General');
+              
+              // Actualizar estado y localStorage
+              setAvailableGroups(filteredGroups);
+              contactsService.saveAllGroups(combinedGroups);
+              
+              console.log('Grupos disponibles actualizados desde Strapi:', filteredGroups);
+              
+              // Si hay grupos de Strapi, no mostrar el modal
+              if (filteredGroups.length > 0) {
+                setShowNoGroupsAvailableModal(false);
+                return; // Salir de la función si encontramos grupos
+              }
+            }
+          }
+        }
+        
+        // Si llegamos aquí, es porque no se encontraron grupos adicionales en Strapi
+        // Verificar si los grupos locales son suficientes
+        if (localGroups.length === 0) {
+          // No hay grupos ni en Strapi ni en localStorage
+          console.log('No se encontraron grupos ni en Strapi ni en localStorage');
+          setShowNoGroupsAvailableModal(true);
+        } else {
+          // Hay grupos en localStorage pero no adicionales en Strapi
+          console.log('Se encontraron grupos solo en localStorage:', localGroups);
+          setShowNoGroupsAvailableModal(false);
+        }  
+      } catch (error) {
+        console.error('Error al obtener grupos de contactos desde Strapi:', error);
+      } finally {
+        setFormState(prev => ({ ...prev, isLoading: false }));
+        useLoadingStore.getState().stopLoading();
+      }
+    };
+    
+    // Ejecutar la función para cargar grupos desde Strapi
+    fetchContactGroups();
     
     // Cargar campaña guardada si existe
     const savedCampaign = localStorage.getItem('currentCampaign');
@@ -233,41 +335,121 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
       // Inicializar con el formato correcto
       const gruposdecontactosData: GruposdecontactosData = { grupos: [] };
       
+      // Primero intentar obtener los grupos desde el registro "Gestión de Grupos de Contactos"
+      // para mantener los IDs consistentes
+      const API_URL = 'http://34.238.122.213:1337';
+      let existingGroups: GrupoDeContactos[] = [];
+      
+      try {
+        // Obtener el usuario actual
+        const currentUser = authService.getCurrentUser();
+        const userId = currentUser?.id || 56; // Valor por defecto si no hay usuario
+        
+        // Consultar si existe el registro "Gestión de Grupos de Contactos"
+        const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userId}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
+        const response = await fetch(url);
+        
+        if (response.ok) {
+          const jsonResponse = await response.json();
+          console.log('Respuesta completa de Strapi (Gestión de Grupos):', jsonResponse);
+          
+          if (jsonResponse.data && jsonResponse.data.length > 0) {
+            const contactsData = jsonResponse.data.find((item: {
+              nombre?: string,
+              gruposdecontactosJSON?: {
+                grupos?: GrupoDeContactos[]
+              }
+            }) => 
+              item && 
+              item.nombre === 'Gestión de Grupos de Contactos' &&
+              item.gruposdecontactosJSON && 
+              item.gruposdecontactosJSON.grupos
+            );
+            
+            if (contactsData && contactsData.gruposdecontactosJSON && contactsData.gruposdecontactosJSON.grupos) {
+              existingGroups = contactsData.gruposdecontactosJSON.grupos;
+              console.log('Grupos existentes encontrados:', existingGroups);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error al obtener grupos existentes:', error);
+        // Continuar con la lógica normal si hay un error
+      }
+      
       if (campaignData.contactGroup === 'todos') {
         // Obtener todos los correos de todos los grupos
         contactEmails = contactsService.getEmailsFromGroups(availableGroups);
         
-        // Obtener todos los grupos y sus contactos
+        // Usar los grupos existentes o crear nuevos si no existen
         gruposdecontactosData.grupos = availableGroups.map(groupName => {
-          const contactos = contactsService.getContactsByGroup(groupName);
-          return {
-            id: `grupo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            nombre: groupName,
-            contactos: contactos.map(contact => ({
-              nombre: contact.name,
-              email: contact.email,
-              telefono: contact.phone
-            }))
-          };
+          // Buscar si el grupo ya existe en los grupos obtenidos de Strapi
+          const existingGroup = existingGroups.find(g => g.nombre === groupName);
+          
+          if (existingGroup) {
+            // Si existe, usar el mismo ID pero actualizar los contactos
+            const contactos = contactsService.getContactsByGroup(groupName);
+            return {
+              id: existingGroup.id,
+              nombre: groupName,
+              contactos: contactos.map(contact => ({
+                nombre: contact.name,
+                email: contact.email,
+                telefono: contact.phone
+              }))
+            };
+          } else {
+            // Si no existe, crear uno nuevo
+            const contactos = contactsService.getContactsByGroup(groupName);
+            return {
+              id: `grupo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              nombre: groupName,
+              contactos: contactos.map(contact => ({
+                nombre: contact.name,
+                email: contact.email,
+                telefono: contact.phone
+              }))
+            };
+          }
         });
       } else {
         // Obtener correos del grupo específico
         const groupEmails = contactsService.getEmailsByGroup(campaignData.contactGroup);
         contactEmails = contactsService.emailArrayToString(groupEmails);
         
+        // Buscar si el grupo ya existe en los grupos obtenidos de Strapi
+        const existingGroup = existingGroups.find(g => g.nombre === campaignData.contactGroup);
+        
         // Obtener datos del grupo específico
         const groupContacts = contactsService.getContactsByGroup(campaignData.contactGroup);
-        gruposdecontactosData.grupos = [
-          {
-            id: `grupo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            nombre: campaignData.contactGroup,
-            contactos: groupContacts.map(contact => ({
-              nombre: contact.name,
-              email: contact.email,
-              telefono: contact.phone
-            }))
-          }
-        ];
+        
+        if (existingGroup) {
+          // Si existe, usar el mismo ID pero actualizar los contactos
+          gruposdecontactosData.grupos = [
+            {
+              id: existingGroup.id,
+              nombre: campaignData.contactGroup,
+              contactos: groupContacts.map(contact => ({
+                nombre: contact.name,
+                email: contact.email,
+                telefono: contact.phone
+              }))
+            }
+          ];
+        } else {
+          // Si no existe, crear uno nuevo
+          gruposdecontactosData.grupos = [
+            {
+              id: `grupo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              nombre: campaignData.contactGroup,
+              contactos: groupContacts.map(contact => ({
+                nombre: contact.name,
+                email: contact.email,
+                telefono: contact.phone
+              }))
+            }
+          ];
+        }
       }
       
       // Ya no generamos documentId aquí, ya que parece que es generado automáticamente por Strapi
@@ -340,7 +522,7 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
         Fechas: campaignData.scheduledTime ? new Date(campaignData.scheduledTime).toISOString() : new Date().toISOString(),
         // Campo adicional para mostrar la fecha en formato Argentina (opcional, solo para depuración)
         fechaArgentina: campaignData.scheduledTime ? new Date(campaignData.scheduledTime).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : null,
-        estado: 'borrador' as const,
+        estado: 'programado' as const,
         contactos: contactEmails,
         gruposdecontactosJSON: gruposdecontactosData as unknown as Record<string, unknown>,
         interaccion_destinatario: interaccion_destinatario as Record<string, unknown> | undefined,

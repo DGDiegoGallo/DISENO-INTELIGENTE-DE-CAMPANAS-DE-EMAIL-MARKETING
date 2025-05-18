@@ -6,8 +6,8 @@
 
 // import { API_URL } from './strapiService'; // No longer needed as AI_CHAT_ENDPOINT is hardcoded
 
-// URL de la API de Strapi para el chat con IA (específico para chat-proyecto-56)
-const AI_CHAT_ENDPOINT = 'http://34.238.122.213:1337/api/open-ai/chat-proyecto-56';
+// URL de la API de Strapi para el chat con IA (específico para técnico-56)
+const AI_CHAT_ENDPOINT = 'http://34.238.122.213:1337/api/open-ai/tecnico-56';
 
 export interface ChatMessage {
   type: 'pregunta' | 'response'; // More specific types

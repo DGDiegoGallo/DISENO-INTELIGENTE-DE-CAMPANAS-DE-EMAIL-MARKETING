@@ -9,7 +9,8 @@ import {
   FaGraduationCap, 
   FaHeadset,
   FaSignOutAlt,
-  FaUser
+  FaUser,
+  FaEnvelope
 } from 'react-icons/fa';
 import authService from '../../services/auth/authService';
 import useUserStore from '../../store/useUserStore';
@@ -120,55 +121,95 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
     // No necesitamos medidas de emergencia adicionales
   };
   
+  // Verificar si el usuario es administrador
+  const isAdmin = useUserStore.getState().user?.rol === 'admin';
+
   return (
     <div style={sidebarStyle}>
       <div style={navContainerStyle}>
-        <div 
-          style={{...navItemStyle, ...(activeView === 'Inicio' ? activeNavItemStyle : {})}}
-          onClick={(e) => handleNavClick('Inicio', e)}
-        >
-          <FaHome style={{...iconStyle, ...(activeView === 'Inicio' ? activeIconStyle : {})}} /> Inicio
-        </div>
+        {/* Mostrar Inicio solo si NO es administrador */}
+        {!isAdmin && (
+          <div 
+            style={{...navItemStyle, ...(activeView === 'Inicio' ? activeNavItemStyle : {})}}
+            onClick={(e) => handleNavClick('Inicio', e)}
+          >
+            <FaHome style={{...iconStyle, ...(activeView === 'Inicio' ? activeIconStyle : {})}} /> Inicio
+          </div>
+        )}
         
-        <div 
-          style={{...navItemStyle, ...(activeView === 'Campañas' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('Campañas', e)}
-        >
-          <FaBullhorn style={{...iconStyle, ...(activeView === 'Campañas' ? activeIconStyle : {})}} /> Campañas
-        </div>
+        {/* Mostrar Campañas solo si NO es administrador */}
+        {!isAdmin && (
+          <div 
+            style={{...navItemStyle, ...(activeView === 'Campañas' ? activeNavItemStyle : {})}} 
+            onClick={(e) => handleNavClick('Campañas', e)}
+          >
+            <FaBullhorn style={{...iconStyle, ...(activeView === 'Campañas' ? activeIconStyle : {})}} /> Campañas
+          </div>
+        )}
         
-        <div 
-          style={{...navItemStyle, ...(activeView === 'Contactos' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('Contactos', e)}
-        >
-          <FaUsers style={{...iconStyle, ...(activeView === 'Contactos' ? activeIconStyle : {})}} /> Contactos
-        </div>
+        {/* Mostrar Contactos solo si NO es administrador */}
+        {!isAdmin && (
+          <div 
+            style={{...navItemStyle, ...(activeView === 'Contactos' ? activeNavItemStyle : {})}} 
+            onClick={(e) => handleNavClick('Contactos', e)}
+          >
+            <FaUsers style={{...iconStyle, ...(activeView === 'Contactos' ? activeIconStyle : {})}} /> Contactos
+          </div>
+        )}
         
-        <div 
-          style={{...navItemStyle, ...(activeView === 'Datos CRM' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('Datos CRM', e)}
-        >
-          <FaDatabase style={{...iconStyle, ...(activeView === 'Datos CRM' ? activeIconStyle : {})}} /> Datos CRM
-        </div>
+        {/* Mostrar Datos CRM solo si NO es administrador */}
+        {!isAdmin && (
+          <div 
+            style={{...navItemStyle, ...(activeView === 'Datos CRM' ? activeNavItemStyle : {})}} 
+            onClick={(e) => handleNavClick('Datos CRM', e)}
+          >
+            <FaDatabase style={{...iconStyle, ...(activeView === 'Datos CRM' ? activeIconStyle : {})}} /> Datos CRM
+          </div>
+        )}
         
-        <div 
-          style={{...navItemStyle, ...(activeView === 'Pruebas A/B' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('Pruebas A/B', e)}
-        >
-          <FaFlask style={{...iconStyle, ...(activeView === 'Pruebas A/B' ? activeIconStyle : {})}} /> Pruebas A/B
-        </div>
+        {/* Mostrar Pruebas A/B solo si NO es administrador */}
+        {!isAdmin && (
+          <div 
+            style={{...navItemStyle, ...(activeView === 'Pruebas A/B' ? activeNavItemStyle : {})}} 
+            onClick={(e) => handleNavClick('Pruebas A/B', e)}
+          >
+            <FaFlask style={{...iconStyle, ...(activeView === 'Pruebas A/B' ? activeIconStyle : {})}} /> Pruebas A/B
+          </div>
+        )}
         
-        <div 
-          style={{...navItemStyle, ...(activeView === 'Metricas' ? activeNavItemStyle : {})}} 
-          onClick={(e) => handleNavClick('Metricas', e)}
-        >
-          <FaChartBar style={{...iconStyle, ...(activeView === 'Metricas' ? activeIconStyle : {})}} />
-          <span style={twoLineTextStyle}>
-            <span>Métricas</span>
-            <span>de rendimiento</span>
-          </span>
-        </div>
+        {/* Mostrar Métricas solo si NO es administrador */}
+        {!isAdmin && (
+          <div 
+            style={{...navItemStyle, ...(activeView === 'Metricas' ? activeNavItemStyle : {})}} 
+            onClick={(e) => handleNavClick('Metricas', e)}
+          >
+            <FaChartBar style={{...iconStyle, ...(activeView === 'Metricas' ? activeIconStyle : {})}} />
+            <span style={twoLineTextStyle}>
+              <span>Métricas</span>
+              <span>de rendimiento</span>
+            </span>
+          </div>
+        )}
         
+        {/* Opciones de administrador - Ahora aparecen primero */}
+        {isAdmin && (
+          <>
+            <div 
+              style={{...navItemStyle, ...(activeView === 'Administracion' ? activeNavItemStyle : {})}} 
+              onClick={(e) => handleNavClick('Administracion', e)}
+            >
+              <FaUser style={{...iconStyle, ...(activeView === 'Administracion' ? activeIconStyle : {})}} /> Administración
+            </div>
+            <div 
+              style={{...navItemStyle, ...(activeView === 'AdminCampaigns' ? activeNavItemStyle : {})}} 
+              onClick={(e) => handleNavClick('AdminCampaigns', e)}
+            >
+              <FaEnvelope style={{...iconStyle, ...(activeView === 'AdminCampaigns' ? activeIconStyle : {})}} /> Campañas de Usuarios
+            </div>
+          </>
+        )}
+        
+        {/* Capacitación y Soporte ahora aparecen al final */}
         <div 
           style={{...navItemStyle, ...(activeView === 'Capacitacion' ? activeNavItemStyle : {})}} 
           onClick={(e) => handleNavClick('Capacitacion', e)}
@@ -176,23 +217,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeView }) => {
           <FaGraduationCap style={{...iconStyle, ...(activeView === 'Capacitacion' ? activeIconStyle : {})}} /> Capacitación
         </div>
         
-        
         <div 
           style={{...navItemStyle, ...(activeView === 'Soporte' ? activeNavItemStyle : {})}} 
           onClick={(e) => handleNavClick('Soporte', e)}
         >
           <FaHeadset style={{...iconStyle, ...(activeView === 'Soporte' ? activeIconStyle : {})}} /> Soporte
         </div>
-
-        {/* Acceso a Admin solo para rol admin */}
-        {useUserStore.getState().user?.rol === 'admin' && (
-          <div 
-            style={{...navItemStyle, ...(activeView === 'Administracion' ? activeNavItemStyle : {})}} 
-            onClick={(e) => handleNavClick('Administracion', e)}
-          >
-            <FaUser style={{...iconStyle, ...(activeView === 'Administracion' ? activeIconStyle : {})}} /> Administración
-          </div>
-        )}
       </div>
       
       {/* Enlace al perfil */}

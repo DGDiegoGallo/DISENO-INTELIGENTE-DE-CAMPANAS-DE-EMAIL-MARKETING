@@ -36,6 +36,9 @@ const RegisterForm: React.FC = () => {
   const [passwordFeedback, setPasswordFeedback] = useState('');
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   
+  // Control de validación del paso 2
+  const [step2Submitted, setStep2Submitted] = useState(false);
+  
   // Obtener estado y funciones de Zustand
   const { 
     register, 
@@ -49,12 +52,41 @@ const RegisterForm: React.FC = () => {
   
   const navigate = useNavigate();
 
-  // Efecto para redireccionar si ya está autenticado
+  // Efecto para redireccionar solo si el usuario inicia sesión (no después del registro)
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
+  
+  // Efecto para resetear la validación al cambiar entre pasos
+  useEffect(() => {
+    if (registrationStep === 2) {
+      // Cuando cambiamos al paso 2, reseteamos la validación y estados
+      setStep2Submitted(false);
+      
+      // Permitir que el DOM se actualice antes de acceder a los elementos
+      setTimeout(() => {
+        try {
+          // Ocultar mensajes de error existentes mediante manipulación directa del DOM
+          const invalidFeedbacks = document.querySelectorAll('.invalid-feedback');
+          invalidFeedbacks.forEach(el => {
+            if (el instanceof HTMLElement) {
+              el.style.display = 'none';
+            }
+          });
+          
+          // Quitar clases is-invalid
+          const invalidInputs = document.querySelectorAll('.is-invalid');
+          invalidInputs.forEach(el => {
+            el.classList.remove('is-invalid');
+          });
+        } catch (e) {
+          console.error('Error manipulando el DOM:', e);
+        }
+      }, 0);
+    }
+  }, [registrationStep]);
 
   // Calcular la fortaleza de la contraseña
   useEffect(() => {
@@ -88,6 +120,11 @@ const RegisterForm: React.FC = () => {
     }
   }, [password]);
 
+  // Alternar visibilidad de la contraseña
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   // Calcular ancho de la barra de progreso
   const getProgressBarWidth = () => {
     return (passwordStrength + 1) * 20; // Convertir de 0-4 a 20-100%
@@ -104,47 +141,71 @@ const RegisterForm: React.FC = () => {
       default: return 'danger';
     }
   };
-
-  // Alternar visibilidad de la contraseña
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  // Validar el formulario según el paso actual
-  const validateStep = (): boolean => {
+  
+  // Validar paso 1 del formulario
+  const validateStep1 = (): boolean => {
     const newErrors: {[key: string]: string} = {};
     
-    if (registrationStep === 1) {
-      // Validación de credenciales básicas
-      if (!username.trim()) newErrors.username = 'El nombre de usuario es obligatorio';
-      if (username.length < 3) newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres';
-      
-      if (!email.trim()) newErrors.email = 'El correo electrónico es obligatorio';
-      if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'El formato del correo electrónico no es válido';
-      
-      if (!password) newErrors.password = 'La contraseña es obligatoria';
-      if (password.length < 6) newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
-      if (passwordStrength < 2) newErrors.password = 'La contraseña no es lo suficientemente segura';
-      
-      if (password !== confirmPassword) newErrors.confirmPassword = 'Las contraseñas no coinciden';
-      
-      if (!termsAccepted) newErrors.terms = 'Debes aceptar los términos y condiciones';
-    } 
-    else if (registrationStep === 2) {
-      // Validación de información personal y contacto
-      if (!nombre.trim()) newErrors.nombre = 'El nombre es obligatorio';
-      if (!apellido.trim()) newErrors.apellido = 'El apellido es obligatorio';
-    }
+    // Validación de credenciales básicas
+    if (!username.trim()) newErrors.username = 'El nombre de usuario es obligatorio';
+    if (username.length < 3) newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres';
     
+    if (!email.trim()) newErrors.email = 'El correo electrónico es obligatorio';
+    if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'El formato del correo electrónico no es válido';
+    
+    if (!password) newErrors.password = 'La contraseña es obligatoria';
+    if (password.length < 6) newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    if (passwordStrength < 2) newErrors.password = 'La contraseña no es lo suficientemente segura';
+    
+    if (password !== confirmPassword) newErrors.confirmPassword = 'Las contraseñas no coinciden';
+    
+    if (!termsAccepted) newErrors.terms = 'Debes aceptar los términos y condiciones';
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+  
+  // Verificar si los campos obligatorios del paso 2 cumplen las validaciones
+  const validateStep2 = (): boolean => {
+    // Todos los campos son obligatorios ahora
+    if (nombre.trim() === '' || 
+        apellido.trim() === '' || 
+        pais.trim() === '' || 
+        ciudad.trim() === '' || 
+        domicilio.trim() === '' || 
+        telefono.trim() === '') {
+      return false;
+    }
+    
+    // Adicionalmente validamos formato
+    if (pais.trim().length < 3) {
+      return false;
+    }
+    
+    if (ciudad.trim().length < 3) {
+      return false;
+    }
+    
+    if (!/^\+?[0-9]{6,15}$/.test(telefono.trim())) {
+      return false;
+    }
+    
+    return true;
   };
 
   // Avanzar al siguiente paso
   const handleNext = () => {
-    if (validateStep()) {
+    // Validar paso 1
+    if (validateStep1()) {
       clearError();
-      setRegistrationStep(Math.min(2, registrationStep + 1)); // Máximo 2 pasos
+      
+      // Eliminar cualquier clase is-invalid en el paso 2 antes de avanzar
+      setStep2Submitted(false);
+      
+      // Avanzar al paso 2 con un pequeño retraso para permitir la limpieza
+      setTimeout(() => {
+        setRegistrationStep(2);
+      }, 10);
     }
   };
 
@@ -154,10 +215,16 @@ const RegisterForm: React.FC = () => {
   };
 
   // Manejar el envío del formulario
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!validateStep()) return;
+    // Marcar el paso 2 como enviado para mostrar errores
+    setStep2Submitted(true);
+    
+    // Validar paso 2
+    if (!validateStep2()) {
+      return;
+    }
     
     // Limpiar cualquier error previo
     clearError();
@@ -183,7 +250,9 @@ const RegisterForm: React.FC = () => {
     try {
       // Registrar usuario usando zustand
       await register(userData);
-      // La redirección se maneja automáticamente mediante el efecto
+      // Redirigir al login después de un registro exitoso
+      navigate('/login');
+      // Mostrar mensaje de éxito o alguna notificación si se desea
     } catch (err) {
       // Los errores se manejan en la tienda Zustand
       console.error('Error al registrar usuario:', err);
@@ -331,14 +400,17 @@ const RegisterForm: React.FC = () => {
         <label htmlFor="nombre" className="form-label">Nombre<span className="text-danger">*</span></label>
         <input
           type="text"
-          className={`form-control ${errors.nombre ? 'is-invalid' : ''}`}
+          className={`form-control ${step2Submitted && !nombre.trim() ? 'is-invalid' : ''}`}
           id="nombre"
           placeholder="Ingrese su nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          required
+          autoComplete="off"
         />
-        {errors.nombre && <div className="invalid-feedback">{errors.nombre}</div>}
+        {/* Div oculto inicialmente, solo se muestra cuando el formulario se envía */}
+        <div className="invalid-feedback" style={{ display: step2Submitted && !nombre.trim() ? 'block' : 'none' }}>
+          El nombre es obligatorio
+        </div>
       </div>
 
       {/* Apellido */}
@@ -346,14 +418,17 @@ const RegisterForm: React.FC = () => {
         <label htmlFor="apellido" className="form-label">Apellido<span className="text-danger">*</span></label>
         <input
           type="text"
-          className={`form-control ${errors.apellido ? 'is-invalid' : ''}`}
+          className={`form-control ${step2Submitted && !apellido.trim() ? 'is-invalid' : ''}`}
           id="apellido"
           placeholder="Ingrese su apellido"
           value={apellido}
           onChange={(e) => setApellido(e.target.value)}
-          required
+          autoComplete="off"
         />
-        {errors.apellido && <div className="invalid-feedback">{errors.apellido}</div>}
+        {/* Div oculto inicialmente, solo se muestra cuando el formulario se envía */}
+        <div className="invalid-feedback" style={{ display: step2Submitted && !apellido.trim() ? 'block' : 'none' }}>
+          El apellido es obligatorio
+        </div>
       </div>
 
       {/* Sexo */}
@@ -403,54 +478,80 @@ const RegisterForm: React.FC = () => {
       
       {/* País */}
       <div className="mb-3">
-        <label htmlFor="pais" className="form-label">País</label>
+        <label htmlFor="pais" className="form-label">País<span className="text-danger">*</span></label>
         <input
           type="text"
-          className="form-control"
+          className={`form-control ${step2Submitted && (pais.trim() === '' || pais.trim().length < 3) ? 'is-invalid' : ''}`}
           id="pais"
           placeholder="Ingrese su país"
           value={pais}
           onChange={(e) => setPais(e.target.value)}
+          autoComplete="off"
         />
+        {step2Submitted && pais.trim() === '' && (
+          <div className="invalid-feedback">El país es obligatorio</div>
+        )}
+        {step2Submitted && pais.trim() !== '' && pais.trim().length < 3 && (
+          <div className="invalid-feedback">El país debe tener al menos 3 caracteres</div>
+        )}
       </div>
 
       {/* Ciudad */}
       <div className="mb-3">
-        <label htmlFor="ciudad" className="form-label">Ciudad</label>
+        <label htmlFor="ciudad" className="form-label">Ciudad<span className="text-danger">*</span></label>
         <input
           type="text"
-          className="form-control"
+          className={`form-control ${step2Submitted && (ciudad.trim() === '' || ciudad.trim().length < 3) ? 'is-invalid' : ''}`}
           id="ciudad"
           placeholder="Ingrese su ciudad"
           value={ciudad}
           onChange={(e) => setCiudad(e.target.value)}
+          autoComplete="off"
         />
+        {step2Submitted && ciudad.trim() === '' && (
+          <div className="invalid-feedback">La ciudad es obligatoria</div>
+        )}
+        {step2Submitted && ciudad.trim() !== '' && ciudad.trim().length < 3 && (
+          <div className="invalid-feedback">La ciudad debe tener al menos 3 caracteres</div>
+        )}
       </div>
 
       {/* Domicilio */}
       <div className="mb-3">
-        <label htmlFor="domicilio" className="form-label">Domicilio</label>
+        <label htmlFor="domicilio" className="form-label">Domicilio<span className="text-danger">*</span></label>
         <input
           type="text"
-          className="form-control"
+          className={`form-control ${step2Submitted && domicilio.trim() === '' ? 'is-invalid' : ''}`}
           id="domicilio"
           placeholder="Ingrese su domicilio"
           value={domicilio}
           onChange={(e) => setDomicilio(e.target.value)}
+          autoComplete="off"
         />
+        {step2Submitted && domicilio.trim() === '' && (
+          <div className="invalid-feedback">El domicilio es obligatorio</div>
+        )}
       </div>
 
       {/* Teléfono */}
       <div className="mb-3">
-        <label htmlFor="telefono" className="form-label">Teléfono</label>
+        <label htmlFor="telefono" className="form-label">Teléfono<span className="text-danger">*</span></label>
         <input
           type="tel"
-          className="form-control"
+          className={`form-control ${step2Submitted && (telefono.trim() === '' || !/^\+?[0-9]{6,15}$/.test(telefono.trim())) ? 'is-invalid' : ''}`}
           id="telefono"
-          placeholder="Ingrese su teléfono"
+          placeholder="Ingrese su teléfono (ej: +56912345678)"
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
+          autoComplete="off"
         />
+        {step2Submitted && telefono.trim() === '' && (
+          <div className="invalid-feedback">El teléfono es obligatorio</div>
+        )}
+        {step2Submitted && telefono.trim() !== '' && !/^\+?[0-9]{6,15}$/.test(telefono.trim()) && (
+          <div className="invalid-feedback">Ingrese un número de teléfono válido (6-15 dígitos)</div>
+        )}
+        <small className="text-muted">Formato: código de país opcional (+56) seguido de 6-15 dígitos</small>
       </div>
 
 
@@ -541,7 +642,7 @@ const RegisterForm: React.FC = () => {
   );
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} noValidate>
       {renderStepIndicator()}
       {renderCurrentStep()}
       

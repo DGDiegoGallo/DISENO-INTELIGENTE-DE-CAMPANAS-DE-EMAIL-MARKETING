@@ -90,21 +90,14 @@ export const useAuthStore = create<AuthState>()(
           );
           
           if (response.data.jwt) {
-            // Guardar datos básicos del usuario
-            const user = response.data.user;
-            
+            // No guardar token ni establecer autenticación para que el usuario tenga que iniciar sesión
             set({ 
-              user,
-              token: response.data.jwt,
-              isAuthenticated: true,
-              isLoading: false
+              isLoading: false 
             });
-            
-            // Configurar el token para futuras solicitudes
-            // axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.jwt}`;
             
             // Si hay campos adicionales del perfil, actualizarlos
             const profileData: Partial<StrapiUser> = {};
+            const user = response.data.user;
             
             // Añadir solo los campos que están presentes en los datos enviados
             if (userData.nombre) profileData.nombre = userData.nombre;

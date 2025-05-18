@@ -138,6 +138,7 @@ const SupportView: React.FC = () => {
                         onKeyPress={handleKeyPress}
                         placeholder="Escribe tu consulta aquí..."
                         disabled={isLoading}
+                        style={{ resize: 'none', overflowY: 'auto' }}
                       />
                     </Form.Group>
                   </Col>

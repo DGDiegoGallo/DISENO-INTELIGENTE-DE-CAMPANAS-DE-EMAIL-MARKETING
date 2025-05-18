@@ -1,34 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import Navbar from '../components/Navbar/Navbar';
-
-// Interfaz básica para los datos de proyecto
-interface Proyecto {
-  id: number;
-  attributes: {
-    nombre?: string;
-    Fechas?: string;
-    estado?: string;
-    asunto?: string;
-    contenidoHTML?: string;
-    createdAt: string;
-    updatedAt: string;
-    publishedAt: string;
-    [key: string]: string | number | boolean | null | undefined | object; // Para otros campos que puedan existir
-  };
-}
-
-interface ProyectosResponse {
-  data: Proyecto[];
-  meta: {
-    pagination: {
-      page: number;
-      pageSize: number;
-      pageCount: number;
-      total: number;
-    };
-  };
-}
+import { Proyecto } from '../interfaces/ProyectoTypes';
+import { proyectosService } from '../services/proyectosService';
 
 const ProyectosPage: React.FC = () => {
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
@@ -41,12 +14,12 @@ const ProyectosPage: React.FC = () => {
       setError(null);
       
       try {
-        const response = await axios.get<ProyectosResponse>('/api/proyecto-56s');
-        console.log('Datos recibidos:', response.data);
-        if (response.data && response.data.data && Array.isArray(response.data.data)) {
-          setProyectos(response.data.data);
+        const responseData = await proyectosService.getAllProyectos();
+        console.log('Datos recibidos:', responseData);
+        if (responseData && responseData.data && Array.isArray(responseData.data)) {
+          setProyectos(responseData.data);
         } else {
-          console.error('Formato de datos inesperado:', response.data);
+          console.error('Formato de datos inesperado:', responseData);
           setError('Los datos recibidos no tienen el formato esperado.');
         }
       } catch (err) {

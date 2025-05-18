@@ -17,7 +17,7 @@ const initializeStorage = () => {
   }
   
   if (!localStorage.getItem(GROUPS_STORAGE_KEY)) {
-    localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(['Sin grupo...']));
+    localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify([]));
   }
 };
 
@@ -60,8 +60,15 @@ export const removeGroup = (groupName: string): void => {
   
   // Actualizar contactos que tenían este grupo
   const contacts = getAllContacts();
+  
+  // Asignar a otro grupo disponible o dejar sin grupo
+  let targetGroup = '';
+  if (newGroups.length > 0) {
+    targetGroup = newGroups[0]; // Usar el primer grupo disponible
+  }
+  
   const updatedContacts = contacts.map(contact => 
-    contact.group === groupName ? { ...contact, group: 'Sin grupo...' } : contact
+    contact.group === groupName ? { ...contact, group: targetGroup } : contact
   );
   saveAllContacts(updatedContacts);
 };

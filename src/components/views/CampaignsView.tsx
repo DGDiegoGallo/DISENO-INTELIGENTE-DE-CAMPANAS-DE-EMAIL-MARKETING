@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaEdit, FaTrash, FaEye, FaSync } from 'react-icons/fa';
+import Pagination from '../common/Pagination';
 import campaignService from '../../services/campaignService';
 import { extractStrapiData } from '../../interfaces/strapi';
 import useLoadingStore from '../../store/useLoadingStore';
@@ -26,6 +27,10 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [useLocalStorage, setUseLocalStorage] = useState(false); // Cargar desde Strapi por defecto
+  
+  // Estados para la paginación
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage] = useState<number>(5); // Número de campañas por página
 
   // Función para cargar datos de ejemplo o desde localStorage
   const loadFromLocalStorage = useCallback(() => {
@@ -276,8 +281,10 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
           <div className="col-2 fw-bold text-end">Acciones</div>
         </div>
 
-        {/* Filas de la tabla */}
-        {campaigns.map((campaign) => (
+        {/* Filas de la tabla - con paginación */}
+        {campaigns
+          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+          .map((campaign) => (
           <React.Fragment key={campaign.id}>
             <div className="row g-0 border-bottom align-items-center" style={{ padding: '0.75rem 1.25rem' }}>
               <div className="col-2">{campaign.fecha}</div>
@@ -342,36 +349,14 @@ const CampaignsView: React.FC<CampaignsViewProps> = ({ onShowCreate }) => {
         ))}
       </div>
 
-      {/* Paginación */}
-      <div className="d-flex justify-content-between align-items-center mt-3">
-        <div className="text-muted small">
-          Mostrando {campaigns.length} de {campaigns.length} campañas
-        </div>
-        <nav aria-label="Page navigation">
-          <ul className="pagination pagination-sm">
-            <li className="page-item">
-              <a className="page-link" href="#" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-            <li className="page-item active"><a className="page-link" href="#">1</a></li>
-            <li className="page-item"><a className="page-link" href="#">2</a></li>
-            <li className="page-item"><a className="page-link" href="#">3</a></li>
-            <li className="page-item"><a className="page-link" href="#">4</a></li>
-            <li className="page-item">
-              <a className="page-link" href="#" aria-label="Next">
-                <span aria-hidden="true">&hellip;</span>
-              </a>
-            </li>
-            <li className="page-item"><a className="page-link" href="#">40</a></li>
-            <li className="page-item">
-              <a className="page-link" href="#" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      {/* Componente de paginación reutilizable */}
+      <Pagination 
+        currentPage={currentPage}
+        totalItems={campaigns.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={(page) => setCurrentPage(page)}
+        primaryColor="#F21A2B"
+      />
     </div>
   );
 };

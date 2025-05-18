@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import useUserStore from '../store/useUserStore';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '../App.css';
 import Sidebar from '../components/Sidebar/Sidebar';
@@ -20,6 +21,7 @@ import ABTestingView from '../components/views/ABTestingView'; // Import for the
 // CreateABTestView import removed as it's now handled by ABTestingView
 import CrmAnalysisView from '../components/views/CrmAnalysis/CrmAnalysisView'; // Importar la vista de Análisis CRM
 import AdminView from '../components/views/AdminView/AdminView'; // Importar la vista de Administración
+import AdminCampaignsView from '../components/views/AdminCampaignsView/AdminCampaignsView'; // Importar la vista de Campañas de Usuarios
 
 // Importar Layout
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -130,6 +132,7 @@ const viewToPathMap: Record<string, string> = {
   'Datos CRM': '/dashboard/crm-data', // Assuming path, adjust if different
   'Pruebas A/B': '/dashboard/ab-testing',
   'Administracion': '/dashboard/admin',
+  'AdminCampaigns': '/dashboard/admin-campaigns',
 };
 
 const pathToViewMap: Record<string, string> = {
@@ -144,6 +147,7 @@ const pathToViewMap: Record<string, string> = {
   '/dashboard/crm-data': 'Datos CRM',
   '/dashboard/ab-testing': 'Pruebas A/B',
   '/dashboard/admin': 'Administracion',
+  '/dashboard/admin-campaigns': 'AdminCampaigns',
 };
 
 // --- Componente Principal Dashboard ---
@@ -151,17 +155,34 @@ function Dashboard() {
   const location = useLocation(); // Get location object
   const navigate = useNavigate(); // Get navigate function
 
-  // Estado para controlar la vista activa
-  const [activeView, setActiveView] = useState('Inicio');
+  // Obtener el rol del usuario para determinar la vista inicial
+  const userRole = useUserStore.getState().user?.rol;
+  // Estado para controlar la vista activa - Inicio para usuarios normales, Administracion para admins
+  const [activeView, setActiveView] = useState(userRole === 'admin' ? 'Administracion' : 'Inicio');
   const [isTransitioning, setIsTransitioning] = useState(false); 
   const [showCreateCampaign, setShowCreateCampaign] = useState(false); 
   const nodeRef = useRef(null); // Ref para transición principal
   const createCampaignNodeRef = useRef(null); // Ref para transición de slide
 
+  // Efecto para redirigir a los administradores a la vista de administración al iniciar
+  useEffect(() => {
+    // Verificamos si es la primera carga (solo cuando la ruta es /dashboard o /dashboard/)
+    const isInitialDashboardRoute = location.pathname === '/dashboard' || location.pathname === '/dashboard/';
+    const userRole = useUserStore.getState().user?.rol;
+    
+    // Si es admin y está en la ruta raíz del dashboard, redirigir a la vista de administración
+    if (userRole === 'admin' && isInitialDashboardRoute) {
+      navigate('/dashboard/admin');
+    }
+  }, [location.pathname, navigate]);
+
   // Effect to update activeView based on URL changes
   useEffect(() => {
     const currentPath = location.pathname;
-    const newView = pathToViewMap[currentPath] || 'Inicio'; // Default to 'Inicio' if path not mapped
+    const userRole = useUserStore.getState().user?.rol;
+    // Default to 'Administracion' for admins, 'Inicio' for regular users if path not mapped
+    const defaultView = userRole === 'admin' ? 'Administracion' : 'Inicio';
+    const newView = pathToViewMap[currentPath] || defaultView;
 
     if (newView !== activeView) {
       // Logic adapted from original handleViewChange for smooth transitions
@@ -231,6 +252,8 @@ function Dashboard() {
       // 'Crear pruebas A/B' case removed as ABTestingView is now the sole entry point
       case 'Administracion':
         return <AdminView />;
+      case 'AdminCampaigns':
+        return <AdminCampaignsView />;
       default:
         return <div>Vista no encontrada</div>;
     }

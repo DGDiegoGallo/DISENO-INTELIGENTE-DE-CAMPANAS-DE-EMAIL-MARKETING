@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'; 
 import { FaEdit, FaTrashAlt, FaSync, FaUser, FaEnvelope, FaPhoneAlt } from 'react-icons/fa';
+import Pagination from '../common/Pagination';
 import AddContactModal from '../AddContactModal'; 
 import EditGroupModal from '../EditGroupModal';
-import DeleteContactModal from '../DeleteContactModal';
+import ConfirmModal from '../ConfirmModal';
 import * as contactsService from '../../services/contactsService';
 import { useAuthStore } from '../../store';
 import useLoadingStore from '../../store/useLoadingStore';
@@ -86,6 +87,19 @@ const ContactView: React.FC = () => {
   // Estado para el contacto seleccionado (vista previa)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   
+  // Estado para selección múltiple de contactos
+  const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
+  const [showBulkActionsBar, setShowBulkActionsBar] = useState<boolean>(false);
+  const [showGroupSelectionModal, setShowGroupSelectionModal] = useState<boolean>(false);
+  
+  // Estados para la paginación
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage] = useState<number>(10); // Número de contactos por página
+  
+  // Estado para el modal de confirmación de eliminación
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<boolean>(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+  
   // Obtener el ID del usuario actual desde Zustand
   const user = useAuthStore(state => state.user);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
@@ -128,11 +142,11 @@ const ContactView: React.FC = () => {
         console.log('Usando ID de prueba:', userIdToUse);
       }
       
-      // Usar el nuevo endpoint que filtra directamente por ID de usuario
+      // Usar el endpoint que filtra por ID de usuario Y nombre específico "Gestión de Grupos de Contactos"
       const API_URL = 'http://34.238.122.213:1337';
-      const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userIdToUse}`;
+      const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userIdToUse}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
       
-      console.log('Consultando URL:', url);
+      console.log('Consultando URL para obtener grupos de contactos:', url);
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -144,9 +158,10 @@ const ContactView: React.FC = () => {
       
       // Procesar los datos si existen
       if (jsonResponse.data && jsonResponse.data.length > 0) {
-        // Buscar el registro que contiene grupos de contactos independientemente del estado
+        // Buscar específicamente el registro "Gestión de Grupos de Contactos"
         const contactsData = jsonResponse.data.find((item: StrapiContact) => 
           item && 
+          item.nombre === 'Gestión de Grupos de Contactos' &&
           item.gruposdecontactosJSON && 
           item.gruposdecontactosJSON.grupos
         );
@@ -291,9 +306,10 @@ const ContactView: React.FC = () => {
         grupos: contactGroups
       };
       
-      // Usar el endpoint API directo que filtra por ID de usuario
+      // Usar el endpoint API directo que filtra por ID de usuario Y nombre específico
       const API_URL = 'http://34.238.122.213:1337';
-      const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userIdToUse}`;
+      // Filtrar específicamente por el registro "Gestión de Grupos de Contactos" del usuario actual
+      const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userIdToUse}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
       
       console.log('Consultando URL para guardar:', url);
       
@@ -307,9 +323,9 @@ const ContactView: React.FC = () => {
       // Verificar si hay datos para este usuario
       const hasExistingData = jsonResponse.data && jsonResponse.data.length > 0;
       
-      // Verificar si existe un registro con grupos de contactos
+      // Buscar específicamente el registro "Gestión de Grupos de Contactos"
       const existingRecord = hasExistingData ? jsonResponse.data.find((item: StrapiContact) => 
-        item && (item.gruposdecontactosJSON || forceCreate)
+        item && item.nombre === 'Gestión de Grupos de Contactos' && (item.gruposdecontactosJSON || forceCreate)
       ) : null;
       
       // Crear una cadena de emails para el campo contactos
@@ -363,7 +379,7 @@ const ContactView: React.FC = () => {
           data: {
             nombre: 'Gestión de Grupos de Contactos',
             Fechas: currentDate,
-            estado: 'borrador',          // Usamos 'borrador' en lugar de 'sistema' para coincidir con tu ejemplo
+            estado: 'activo',          // Cambiado de 'borrador' a 'activo' para marcar como campaña activa
             asunto: 'Sistema de Grupos',
             contenidoHTML: null,
             gruposdecontactosJSON: gruposData,
@@ -416,8 +432,8 @@ const ContactView: React.FC = () => {
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedContactIndex, setSelectedContactIndex] = useState<number | null>(null);
+  const [targetGroupForBulkAction, setTargetGroupForBulkAction] = useState<string>('');
 
   const handleOpenAddModal = () => setShowAddModal(true);
 
@@ -426,10 +442,7 @@ const ContactView: React.FC = () => {
     setShowEditModal(true);
   };
 
-  const handleOpenDeleteModal = (index: number) => {
-    setSelectedContactIndex(index);
-    setShowDeleteModal(true);
-  };
+
   
   const handleSelectContact = (contact: Contact) => {
     setSelectedContact(contact);
@@ -438,8 +451,11 @@ const ContactView: React.FC = () => {
   const handleCloseModals = () => {
     setShowAddModal(false);
     setShowEditModal(false);
-    setShowDeleteModal(false);
+    setShowGroupSelectionModal(false);
+    setShowDeleteConfirmModal(false);
     setSelectedContactIndex(null);
+    setTargetGroupForBulkAction('');
+    setContactToDelete(null);
   };
 
   const handleAddContact = async (name: string, email: string, phone: string, group: string) => {
@@ -478,6 +494,7 @@ const ContactView: React.FC = () => {
     await saveContactGroupsToStrapi(needsInitialRegistration);
   };
 
+  // Manejar cambio de grupo para un solo contacto
   const handleEditGroup = async (newGroup: string) => {
     if (selectedContactIndex === null) return;
     
@@ -495,15 +512,49 @@ const ContactView: React.FC = () => {
     handleCloseModals();
   };
   
-  // Función para sacar un contacto de un grupo
-  const handleRemoveFromGroup = async (contactId: number) => {
-    // Buscar el contacto
-    const contactToUpdate = contacts.find(c => c.id === contactId);
+  // Manejar selección múltiple de contactos
+  const toggleContactSelection = (contactId: number) => {
+    setSelectedContactIds(prev => {
+      if (prev.includes(contactId)) {
+        // Quitar de la selección
+        const newSelection = prev.filter(id => id !== contactId);
+        if (newSelection.length === 0) {
+          setShowBulkActionsBar(false);
+        }
+        return newSelection;
+      } else {
+        // Añadir a la selección
+        setShowBulkActionsBar(true);
+        return [...prev, contactId];
+      }
+    });
+  };
+  
+  // Cancelar selección múltiple
+  const cancelBulkSelection = () => {
+    setSelectedContactIds([]);
+    setShowBulkActionsBar(false);
+  };
+  
+  // Abrir modal para seleccionar grupo destino para la acción masiva
+  const openGroupSelectionModal = () => {
+    setShowGroupSelectionModal(true);
+  };
+  
+  // Aplicar cambio de grupo a múltiples contactos
+  const applyBulkGroupChange = async (newGroup: string) => {
+    if (!newGroup) {
+      handleCloseModals();
+      return;
+    }
     
-    if (!contactToUpdate) return;
+    // Actualizar todos los contactos seleccionados
+    const selectedContacts = contacts.filter(contact => selectedContactIds.includes(contact.id));
     
-    // Asignar el contacto a "Sin grupo..."
-    contactsService.updateContact(contactId, { group: 'Sin grupo...' });
+    // Actualizar cada contacto en el servicio
+    selectedContacts.forEach(contact => {
+      contactsService.updateContact(contact.id, { group: newGroup });
+    });
     
     // Actualizar el estado local
     setContacts(contactsService.getAllContacts());
@@ -511,44 +562,47 @@ const ContactView: React.FC = () => {
     // Sincronizar con Strapi
     await saveContactGroupsToStrapi();
     
-    // Si el contacto que se está mostrando en la vista previa es modificado, actualizarlo
-    if (selectedContact && selectedContact.id === contactId) {
-      setSelectedContact({
-        ...selectedContact,
-        group: 'Sin grupo...'
-      });
-    }
-    
-    // Cerrar el modal de edición y abrir uno nuevo con la información actualizada
-    if (showEditModal && selectedContactIndex !== null) {
-      const updatedContacts = contactsService.getAllContacts();
-      const currentContactIndex = updatedContacts.findIndex(c => c.id === contactToUpdate.id);
-      if (currentContactIndex >= 0) {
-        handleCloseModals();
-        setTimeout(() => {
-          setSelectedContactIndex(currentContactIndex);
-          setShowEditModal(true);
-        }, 100);
-      }
-    }
+    // Limpiar selección
+    cancelBulkSelection();
+    handleCloseModals();
   };
-
-  const handleDeleteContact = async () => {
-    if (selectedContactIndex === null) return;
+  
+  // Abrir modal de confirmación para eliminar contacto
+  const openDeleteConfirmModal = (contactId: number) => {
+    const contact = contacts.find(c => c.id === contactId);
+    if (!contact) return;
     
-    const contactToDelete = contacts[selectedContactIndex];
+    setContactToDelete(contact);
+    setShowDeleteConfirmModal(true);
+  };
+  
+  // Función para eliminar permanentemente un contacto
+  const handlePermanentDelete = async () => {
+    if (!contactToDelete) return;
     
-    // Eliminar el contacto usando el servicio
+    // Eliminar el contacto del servicio
     contactsService.removeContact(contactToDelete.id);
     
     // Actualizar el estado local
     setContacts(contactsService.getAllContacts());
     
+    // Si el contacto que se está mostrando en la vista previa es el eliminado, limpiarlo
+    if (selectedContact && selectedContact.id === contactToDelete.id) {
+      setSelectedContact(null);
+    }
+    
+    // Si estábamos seleccionando este contacto, limpiar la selección
+    setSelectedContactIds(prev => prev.filter(id => id !== contactToDelete.id));
+    
     // Sincronizar con Strapi
     await saveContactGroupsToStrapi();
     
-    handleCloseModals();
+    // Cerrar el modal y limpiar el contacto seleccionado
+    setShowDeleteConfirmModal(false);
+    setContactToDelete(null);
   };
+
+
 
   const headerCellStyle: React.CSSProperties = {
     backgroundColor: '#282A5B', 
@@ -631,6 +685,7 @@ const ContactView: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
+                <th style={{...headerCellStyle, width: '30px'}}></th>
                 <th style={headerCellStyle}>Nombre</th>
                 <th style={headerCellStyle}>Teléfono</th>
                 <th style={headerCellStyle}>Grupo</th>
@@ -638,16 +693,28 @@ const ContactView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {contacts.map((contact, index) => (
+              {contacts
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((contact, index) => (
                 <tr 
                   key={contact.id} 
                   style={{ 
                     backgroundColor: index % 2 === 0 ? '#f9f9f9' : 'white',
                     cursor: 'pointer',
-                    ...(selectedContact?.id === contact.id ? { backgroundColor: '#f8e5e6' } : {})
+                    ...(selectedContact?.id === contact.id ? { backgroundColor: '#f8e5e6' } : {}),
+                    ...(selectedContactIds.includes(contact.id) ? { backgroundColor: '#e8f4fd' } : {})
                   }}
                   onClick={() => handleSelectContact(contact)}
                 >
+                  <td style={{...bodyCellStyle, width: '30px'}}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedContactIds.includes(contact.id)}
+                      onChange={() => toggleContactSelection(contact.id)}
+                      onClick={(e) => e.stopPropagation()} // Evitar selección del contacto
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </td>
                   <td style={bodyCellStyle}>{contact.name}</td>
                   <td style={bodyCellStyle}>{contact.phone}</td>
                   <td style={bodyCellStyle}>{contact.group}</td>
@@ -663,7 +730,7 @@ const ContactView: React.FC = () => {
                       style={actionIconStyle} 
                       onClick={(e) => {
                         e.stopPropagation(); // Evitar que se seleccione el contacto
-                        handleOpenDeleteModal(index);
+                        openDeleteConfirmModal(contact.id);
                       }} 
                     />
                   </td>
@@ -751,9 +818,8 @@ const ContactView: React.FC = () => {
                       fontSize: '14px'
                     }}
                     onClick={() => {
-                      const index = contacts.findIndex(c => c.id === selectedContact.id);
-                      if (index !== -1) {
-                        handleOpenDeleteModal(index);
+                      if (selectedContact) {
+                        openDeleteConfirmModal(selectedContact.id);
                       }
                     }}
                   >
@@ -780,19 +846,63 @@ const ContactView: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#666', fontSize: '13px' }}>
-        <span>Mostrando {contacts.length} de {contacts.length} datos</span> 
-        <div>
-          <button style={{ border: '1px solid #ccc', background: 'none', padding: '5px 10px', margin: '0 2px', cursor: 'pointer' }}>&lt;</button>
-          <button style={{ border: '1px solid #ccc', background: '#F21A2B', color: 'white', padding: '5px 10px', margin: '0 2px', cursor: 'pointer' }}>1</button>
-          <button style={{ border: '1px solid #ccc', background: 'none', padding: '5px 10px', margin: '0 2px', cursor: 'pointer' }}>2</button>
-          <button style={{ border: '1px solid #ccc', background: 'none', padding: '5px 10px', margin: '0 2px', cursor: 'pointer' }}>3</button>
-          <button style={{ border: '1px solid #ccc', background: 'none', padding: '5px 10px', margin: '0 2px', cursor: 'pointer' }}>4</button>
-          <span>...</span>
-          <button style={{ border: '1px solid #ccc', background: 'none', padding: '5px 10px', margin: '0 2px', cursor: 'pointer' }}>40</button>
-          <button style={{ border: '1px solid #ccc', background: 'none', padding: '5px 10px', margin: '0 2px', cursor: 'pointer' }}>&gt;</button>
+      {/* Barra de acciones masivas */}
+      {showBulkActionsBar && (
+        <div style={{ 
+          marginTop: '15px',
+          padding: '10px 15px',
+          backgroundColor: '#f0f8ff',
+          borderRadius: '5px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div>
+            <span style={{ fontWeight: 'bold' }}>{selectedContactIds.length} contacto(s) seleccionado(s)</span>
+          </div>
+          <div>
+            <button
+              style={{
+                marginRight: '10px',
+                padding: '8px 12px',
+                backgroundColor: '#282A5B',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px'
+              }}
+              onClick={openGroupSelectionModal}
+            >
+              Cambiar grupo
+            </button>
+            <button
+              style={{
+                padding: '8px 12px',
+                backgroundColor: 'transparent',
+                color: '#555',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '13px'
+              }}
+              onClick={cancelBulkSelection}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+      
+      {/* Componente de paginación reutilizable */}
+      <Pagination 
+        currentPage={currentPage}
+        totalItems={contacts.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={(page) => setCurrentPage(page)}
+        primaryColor="#F21A2B"
+      />
 
       <AddContactModal 
         isOpen={showAddModal}
@@ -802,23 +912,39 @@ const ContactView: React.FC = () => {
         onAddGroup={handleAddGroup}
       />
 
-      <EditGroupModal 
-        isOpen={showEditModal}
+      {showEditModal && selectedContactIndex !== null && (
+        <EditGroupModal
+          isOpen={showEditModal}
+          onClose={handleCloseModals}
+          onSubmit={handleEditGroup}
+          currentGroup={contacts[selectedContactIndex]?.group}
+          groups={groups}
+          contactsInGroup={contacts.filter(c => c.group === contacts[selectedContactIndex]?.group)}
+          allContacts={contacts}
+        />
+      )}
+      
+      {/* Modal para selección de grupo para operación en lote */}
+      <EditGroupModal
+        isOpen={showGroupSelectionModal}
         onClose={handleCloseModals}
-        onSubmit={handleEditGroup}
-        currentGroup={selectedContactIndex !== null ? contacts[selectedContactIndex]?.group : undefined}
+        onSubmit={applyBulkGroupChange}
+        currentGroup={targetGroupForBulkAction}
         groups={groups}
         onAddGroup={handleAddGroup}
-        contactsInGroup={selectedContactIndex !== null && contacts[selectedContactIndex]?.group 
-          ? contacts.filter(c => c.group === contacts[selectedContactIndex].group) 
-          : []}
-        onRemoveFromGroup={handleRemoveFromGroup}
+        contactsInGroup={selectedContactIds.length > 0 ? contacts.filter(c => selectedContactIds.includes(c.id)) : []}
+        allContacts={contacts}
       />
 
-      <DeleteContactModal 
-        isOpen={showDeleteModal}
+      {/* Modal de confirmación para eliminar contactos */}
+      <ConfirmModal 
+        isOpen={showDeleteConfirmModal}
         onClose={handleCloseModals}
-        onConfirm={handleDeleteContact}
+        onConfirm={handlePermanentDelete}
+        title="Confirmar eliminación"
+        message={contactToDelete ? `¿Estás seguro de eliminar permanentemente el contacto "${contactToDelete.name}"? Esta acción no se puede deshacer.` : ''}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
       />
 
     </div>

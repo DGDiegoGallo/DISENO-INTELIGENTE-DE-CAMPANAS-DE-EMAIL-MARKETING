@@ -3,6 +3,7 @@
 // Datos básicos del usuario que vienen de Strapi
 export interface StrapiUser {
   id: number;
+  documentId?: string;  // ID del documento en Strapi
   username: string;
   email: string;
   provider: string;
@@ -10,6 +11,7 @@ export interface StrapiUser {
   blocked: boolean;
   createdAt: string;
   updatedAt: string;
+  publishedAt?: string;  // Fecha de publicación
   // Campos adicionales del perfil
   nombre?: string;
   apellido?: string;

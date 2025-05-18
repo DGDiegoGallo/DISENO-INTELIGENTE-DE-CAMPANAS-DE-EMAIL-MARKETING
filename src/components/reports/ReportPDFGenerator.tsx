@@ -363,20 +363,6 @@ const ReportPDFGenerator = forwardRef<ReportPDFGeneratorRef, ReportPDFGeneratorP
           onProgress(90); // Still update progress to 90 if no A/B tests before recommendations
         }
         
-        // Add recommendations (These were previously at onProgress(90))
-        doc.addPage();
-        doc.setFontSize(14);
-        doc.setTextColor(40, 42, 91);
-        doc.text('Recomendaciones', 20, 20);
-        
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text('1. Organizar contactos en grupos más específicos para mejorar la segmentación.', 20, 35);
-        doc.text('2. Utilizar asuntos de correo más atractivos para aumentar tasas de apertura.', 20, 45);
-        doc.text('3. Programar envíos en horarios óptimos según el público objetivo.', 20, 55);
-        doc.text('4. Revisar y completar las campañas en borrador para aumentar el número de envíos.', 20, 65);
-        doc.text('5. Analizar los resultados de campañas enviadas para mejorar futuras estrategias.', 20, 75);
-        
         onProgress(90);
         
         // Save the PDF

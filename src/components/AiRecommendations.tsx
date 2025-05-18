@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { UserCampaignsData } from '../services/reportService'; // Assuming this might be used later
+import { UserCampaignsData } from '../services/reportService';
+
 
 interface AiRecommendationsProps {
-  // Props will be added later, e.g., to receive campaign data
-  reportData: UserCampaignsData | null; // To be used for context later
+  reportData: UserCampaignsData | null;
 }
 
 interface AiRequestPayload {
   data: {
     chat: Array<{
-      type: 'pregunta' | 'respuesta' | 'contexto'; // Added 'contexto' for campaign data
+      type: 'pregunta' | 'respuesta' | 'contexto';
       content: string;
     }>;
   };
@@ -23,6 +23,12 @@ interface AiApiResponse {
       content: string;
     }>;
   }>;
+}
+
+interface ChatMessage {
+  type: 'user' | 'ai';
+  content: string;
+  timestamp: Date;
 }
 
 const formatDateForAI = (dateString?: string): string => {
@@ -99,11 +105,19 @@ const transformReportDataToText = (data: UserCampaignsData | null): string => {
   return fullText.trim();
 };
 
+// Component to show loading dots
+const LoadingDots: React.FC = () => (
+  <div className="loading-dots">
+    <span>.</span><span>.</span><span>.</span>
+  </div>
+);
+
 const AiRecommendations: React.FC<AiRecommendationsProps> = ({ reportData }) => {
-  const [userQuestion, setUserQuestion] = useState<string>('');
-  const [aiResponse, setAiResponse] = useState<string>('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const chatHistoryRef = useRef<HTMLDivElement>(null);
 
   const STRAPI_AI_ENDPOINT = 'http://34.238.122.213:1337/api/open-ai/chat-proyecto-56';
 
@@ -121,6 +135,24 @@ const AiRecommendations: React.FC<AiRecommendationsProps> = ({ reportData }) => 
     }
   };
 
+  // Initialize with a welcome message
+  useEffect(() => {
+    setMessages([
+      {
+        type: 'ai',
+        content: 'Este es un servicio de recomendaciones basado en los informes de métricas de tus campañas. Puedes consultar sobre el rendimiento de tus campañas, tendencias identificadas o solicitar sugerencias para mejorar tus resultados.',
+        timestamp: new Date()
+      }
+    ]);
+  }, []);
+
+  // Auto-scroll to the last message
+  useEffect(() => {
+    if (chatHistoryRef.current) {
+      chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   // Effect to save reportData whenever it changes and is available
   useEffect(() => {
     if (reportData) {
@@ -128,23 +160,28 @@ const AiRecommendations: React.FC<AiRecommendationsProps> = ({ reportData }) => 
     }
   }, [reportData]);
 
-  const handleSubmitQuery = async () => {
-    if (!userQuestion.trim()) {
-      setError('Por favor, introduce una pregunta.');
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) {
       return;
     }
 
+    // Add user message to the conversation
+    const userMessage: ChatMessage = { 
+      type: 'user', 
+      content: inputMessage.trim(),
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
     setIsLoading(true);
     setError(null);
-    setAiResponse('');
 
     let campaignDataContext = '';
     try {
       const storedTextData = localStorage.getItem('campaignReportDataForAI');
       if (storedTextData) {
-        campaignDataContext = storedTextData; // Directly use the detailed text string
-        // Increased limit for more detailed context, adjust as needed based on AI API limits
-        const MAX_CONTEXT_LENGTH = 4000; // Example: 4000 characters
+        campaignDataContext = storedTextData;
+        const MAX_CONTEXT_LENGTH = 4000;
         if (campaignDataContext.length > MAX_CONTEXT_LENGTH) { 
             campaignDataContext = campaignDataContext.substring(0, MAX_CONTEXT_LENGTH) + '\n... (Contexto truncado para no exceder el límite)';
             console.warn(`Campaign context data was truncated to ${MAX_CONTEXT_LENGTH} characters for AI prompt.`);
@@ -157,7 +194,7 @@ const AiRecommendations: React.FC<AiRecommendationsProps> = ({ reportData }) => 
       campaignDataContext = 'Error al leer el contexto de campañas desde el almacenamiento local.';
     }
 
-    const fullContent = `${campaignDataContext}\n\nPregunta: ${userQuestion}`.trim();
+    const fullContent = `${campaignDataContext}\n\nPregunta: ${inputMessage}`.trim();
 
     const payload: AiRequestPayload = {
       data: {
@@ -171,27 +208,61 @@ const AiRecommendations: React.FC<AiRecommendationsProps> = ({ reportData }) => 
       const response = await axios.post<AiApiResponse>(STRAPI_AI_ENDPOINT, payload, {
         headers: {
           'Content-Type': 'application/json',
-          // Add Authorization header if required by your Strapi setup
-          // 'Authorization': 'Bearer YOUR_STRAPI_API_TOKEN',
         },
       });
 
       if (response.data && response.data.autos && response.data.autos[0] && response.data.autos[0].chat && response.data.autos[0].chat[0]) {
-        setAiResponse(response.data.autos[0].chat[0].content);
+        const aiResponseContent = response.data.autos[0].chat[0].content;
+        
+        // Add AI response to the conversation
+        const aiResponseMessage: ChatMessage = {
+          type: 'ai',
+          content: aiResponseContent,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, aiResponseMessage]);
       } else {
         setError('La respuesta de la IA no tuvo el formato esperado.');
         console.error('Unexpected AI response structure:', response.data);
+        
+        // Add error message to the conversation
+        const errorMessage: ChatMessage = {
+          type: 'ai',
+          content: 'Lo siento, no pude procesar tu consulta correctamente. Por favor, intenta de nuevo.',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
       }
     } catch (err) {
       console.error('Error sending query to AI:', err);
+      let errorMessage = 'Ocurrió un error al comunicarse con el servicio de IA.';
+      
       if (axios.isAxiosError(err) && err.response) {
-        setError(`Error de la API: ${err.response.status} - ${JSON.stringify(err.response.data)}`);
-      } else {
-        setError('Ocurrió un error al comunicarse con el servicio de IA.');
+        errorMessage = `Error de la API: ${err.response.status} - ${JSON.stringify(err.response.data)}`;
       }
+      
+      setError(errorMessage);
+      
+      // Add error message to the conversation
+      const aiErrorMessage: ChatMessage = {
+        type: 'ai',
+        content: errorMessage,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiErrorMessage]);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // This space intentionally left blank
 
   return (
     <div className="card mt-4">
@@ -200,49 +271,76 @@ const AiRecommendations: React.FC<AiRecommendationsProps> = ({ reportData }) => 
       </div>
       <div className="card-body">
         <p className="card-text">
-          Consulta a la IA sobre tus campañas. Los datos actuales del informe se guardan en localStorage y se pueden usar como contexto (actualmente de forma básica).
+          Consulta a la IA sobre tus campañas. Los datos actuales del informe se guardan en localStorage y se pueden usar como contexto para obtener recomendaciones personalizadas.
         </p>
+        
+        {/* Chat history */}
+        <div 
+          className="chat-history mb-4 p-3 border rounded" 
+          ref={chatHistoryRef}
+          style={{ maxHeight: '350px', overflowY: 'auto' }}
+        >
+                {messages.map((message, index) => (
+                  <div 
+                    key={index} 
+                    className={`message-bubble p-3 mb-3 rounded ${message.type === 'user' ? 'user-message bg-danger text-white ms-auto' : 'ai-message bg-primary text-white'}`}
+                    style={{ 
+                      maxWidth: '80%', 
+                      float: message.type === 'user' ? 'right' : 'left',
+                      clear: 'both'
+                    }}
+                  >
+                    {message.content}
+                  </div>
+                ))}
+                
+                {isLoading && (
+                  <div 
+                    className="message-bubble p-3 mb-3 rounded ai-message bg-primary text-white" 
+                    style={{ 
+                      maxWidth: '80%', 
+                      float: 'left',
+                      clear: 'both' 
+                    }}
+                  >
+                    <LoadingDots />
+                  </div>
+                )}
+                <div style={{ clear: 'both' }}></div>
+        </div>
+
+        {/* Input for new message */}
         <div className="mb-3">
-          <label htmlFor="userQuestionArea" className="form-label">Tu Pregunta:</label>
-          <textarea
-            id="userQuestionArea"
-            className="form-control"
+          <label htmlFor="userQuestionArea" className="form-label">Tu Consulta:</label>
+          <textarea 
+            id="userQuestionArea" 
+            className="form-control" 
             rows={3}
-            value={userQuestion}
-            onChange={(e) => setUserQuestion(e.target.value)}
-            placeholder="Ej: ¿Qué campaña tuvo el peor rendimiento en clics? ¿Cómo puedo mejorar mis asuntos?"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ej: ¿Qué campaña tuvo el mejor rendimiento? ¿Cómo puedo mejorar mis tasas de apertura?"
             disabled={isLoading}
+            style={{ resize: 'none', overflowY: 'auto' }}
           />
         </div>
-        <button
+        
+        <button 
           className="btn btn-primary"
-          onClick={handleSubmitQuery}
-          disabled={isLoading}
+          onClick={handleSendMessage}
+          disabled={isLoading || !inputMessage.trim()}
         >
           {isLoading ? (
             <>
               <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               Consultando...
             </>
-          ) : (
-            'Enviar Consulta'
-          )}
+          ) : 'Enviar Consulta'}
         </button>
-
+        
         {error && (
           <div className="alert alert-danger mt-3" role="alert">
             {error}
-          </div>
-        )}
-
-        {aiResponse && !isLoading && (
-          <div className="mt-4">
-            <h6>Respuesta de la IA:</h6>
-            <div className="card bg-light">
-              <div className="card-body" style={{ whiteSpace: 'pre-wrap' }}>
-                {aiResponse}
-              </div>
-            </div>
           </div>
         )}
       </div>

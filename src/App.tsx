@@ -61,7 +61,12 @@ function App() {
         <div className="flex-grow">
           <Routes>
             <Route path="/" element={
-              isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
+              isAuthenticated ? 
+                (useUserStore.getState().user?.rol === 'admin' ? 
+                  <Navigate to="/dashboard/admin" replace /> : 
+                  <Navigate to="/dashboard" replace />
+                ) : 
+                <LandingPage />
             } />
             <Route path="/dashboard/*" element={
               <ProtectedRoute>
