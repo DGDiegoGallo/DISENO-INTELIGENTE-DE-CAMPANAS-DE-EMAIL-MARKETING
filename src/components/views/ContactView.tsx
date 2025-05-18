@@ -3,6 +3,7 @@ import { FaEdit, FaTrashAlt, FaSync, FaUser, FaEnvelope, FaPhoneAlt } from 'reac
 import Pagination from '../common/Pagination';
 import AddContactModal from '../AddContactModal'; 
 import EditGroupModal from '../EditGroupModal';
+import { API_URL } from '../../config/api';
 import ConfirmModal from '../ConfirmModal';
 import * as contactsService from '../../services/contactsService';
 import { useAuthStore } from '../../store';
@@ -143,7 +144,6 @@ const ContactView: React.FC = () => {
       }
       
       // Usar el endpoint que filtra por ID de usuario Y nombre específico "Gestión de Grupos de Contactos"
-      const API_URL = 'http://34.238.122.213:1337';
       const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userIdToUse}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
       
       console.log('Consultando URL para obtener grupos de contactos:', url);

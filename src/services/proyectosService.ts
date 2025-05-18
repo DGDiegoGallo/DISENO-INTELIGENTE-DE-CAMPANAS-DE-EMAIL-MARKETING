@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Proyecto, ProyectosResponse } from '../interfaces/ProyectoTypes';
+import { API_URL } from '../config/api';
 
-const API_BASE_URL = "http://34.238.122.213:1337/api/proyecto-56s";
+const API_BASE_URL = `${API_URL}/api/proyecto-56s`;
 
 export const proyectosService = {
     /**

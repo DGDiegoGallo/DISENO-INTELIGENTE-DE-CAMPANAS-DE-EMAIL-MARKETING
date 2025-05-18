@@ -76,7 +76,7 @@ const ReportCampaignSummary: React.FC<ReportCampaignSummaryProps> = ({ reportDat
                   <h6>Interacciones de Destinatarios:</h6>
                   <p><strong>Total Clicks:</strong> {totalInteractionClicks}</p>
                   <p><strong>Total Aperturas:</strong> {totalInteractionOpens}</p>
-                  <p><strong>Dinero Gastado (Interacciones):</strong> ${totalInteractionDineroGastado.toFixed(2)}</p>
+                  <p><strong>Dinero Gastado (Interacciones):</strong> ${Number(totalInteractionDineroGastado || 0).toFixed(2)}</p>
                   <p><strong>Registros (Interacciones):</strong> {totalInteractionRegistrations}</p>
                 </div>
               </div>

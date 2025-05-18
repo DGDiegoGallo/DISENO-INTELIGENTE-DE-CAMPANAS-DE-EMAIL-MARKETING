@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_URL = 'http://34.238.122.213:1337';
+import { API_URL } from '../../config/api';
 
 // Interfaces para tipado
 export interface LoginCredentials {

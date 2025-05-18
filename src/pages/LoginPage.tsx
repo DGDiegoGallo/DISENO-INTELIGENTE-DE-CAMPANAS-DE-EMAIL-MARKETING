@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar/Navbar';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import useUserStore from '../store/useUserStore';
+import { API_URL } from '../config/api';
 import axios from 'axios';
 
 const LoginPage: React.FC = () => {
@@ -45,7 +46,7 @@ const LoginPage: React.FC = () => {
     try {
       // 1. Llamar a la API de Strapi para buscar el usuario por email
       const response = await axios.get(
-        `http://34.238.122.213:1337/api/users?filters[email][$eq]=${email}&populate=*`
+        `${API_URL}/api/users?filters[email][$eq]=${email}&populate=*`
       );
 
       // 2. Procesar la respuesta

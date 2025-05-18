@@ -2,8 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import axios from 'axios';
 import { StrapiUser, RegisterUserData } from '../interfaces/user';
-
-const API_URL = 'http://34.238.122.213:1337';
+import { API_URL } from '../config/api';
 
 // Credenciales para inicio de sesión
 export interface LoginCredentials {

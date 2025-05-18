@@ -1,6 +1,5 @@
 // Importamos solo los tipos necesarios
-
-const API_URL = 'http://34.238.122.213:1337';
+import { API_URL } from '../config/api';
 
 // Interfaz para las campañas en el formato que viene de Strapi
 export interface CampaignData {

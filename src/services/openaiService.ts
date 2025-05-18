@@ -4,10 +4,10 @@
  * Servicio para interactuar con la API de OpenAI a través de Strapi.
  */
 
-// import { API_URL } from './strapiService'; // No longer needed as AI_CHAT_ENDPOINT is hardcoded
+import { API_URL } from '../config/api';
 
 // URL de la API de Strapi para el chat con IA (específico para técnico-56)
-const AI_CHAT_ENDPOINT = 'http://34.238.122.213:1337/api/open-ai/tecnico-56';
+const AI_CHAT_ENDPOINT = `${API_URL}/api/open-ai/tecnico-56`;
 
 export interface ChatMessage {
   type: 'pregunta' | 'response'; // More specific types

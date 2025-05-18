@@ -3,6 +3,7 @@ import { Button, Alert, Spinner, ProgressBar } from 'react-bootstrap';
 import { FaSync } from 'react-icons/fa';
 import strapiService from '../../services/strapiService';
 import { Campaign as BaseCampaign } from '../../services/campaignService';
+import { API_URL } from '../../config/api';
 import { extractStrapiData } from '../../interfaces/strapi';
 
 // Extender la interfaz Campaign para incluir documentId y Fechas
@@ -32,9 +33,6 @@ const CampaignDataSimulator: React.FC<CampaignDataSimulatorProps> = ({ onDataSim
   // Función para actualizar campaña usando documentId en lugar de id numérico
   const updateCampaignByDocumentId = async (endpoint: string, documentId: string, data: Record<string, unknown>) => {
     try {
-      // Usar axios directamente para hacer la solicitud PUT con documentId
-      const API_URL = 'http://34.238.122.213:1337';
-      
       // Configurar headers sin el token de autenticación
       const headers = {
         'Content-Type': 'application/json',

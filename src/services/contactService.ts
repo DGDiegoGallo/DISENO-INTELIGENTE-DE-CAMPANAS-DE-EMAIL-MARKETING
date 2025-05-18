@@ -1,6 +1,7 @@
 import strapiService from './strapiService';
 import { StrapiResponse, StrapiSingleResponse } from '../interfaces/strapi';
 import { Contact, Segment, ContactFilters } from '../interfaces/contacts';
+import { API_URL } from '../config/api';
 
 // Servicio para manejar contactos y segmentos
 const contactService = {
@@ -133,7 +134,7 @@ const contactService = {
       
       // Luego llamamos a un endpoint personalizado para procesar el archivo
       // Esto dependerá de cómo hayas configurado Strapi
-      const response = await fetch(`http://34.238.122.213:1337/api/contacts/import`, {
+      const response = await fetch(`${API_URL}/api/contacts/import`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

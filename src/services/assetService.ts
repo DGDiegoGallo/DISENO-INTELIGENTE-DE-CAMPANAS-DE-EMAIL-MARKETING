@@ -1,4 +1,4 @@
-import { API_URL } from './strapiService';
+import { API_URL } from '../config/api';
 
 interface StrapiAsset {
   id: number;

@@ -170,7 +170,7 @@ const ReportPDFGenerator = forwardRef<ReportPDFGeneratorRef, ReportPDFGeneratorP
               campaign.se_registro_en_pagina ? 'Sí' : 'No',
               totalInteractionClicks.toString(),
               totalInteractionOpens.toString(),
-              `$${totalInteractionDineroGastado.toFixed(2)}`,
+              `$${Number(totalInteractionDineroGastado || 0).toFixed(2)}`, 
               totalInteractionRegistrations.toString(),
               gruposSummary
             ];

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { FaArrowLeft, FaPen, FaEye, FaUsers } from 'react-icons/fa';
 import EmailEditorComponent from '../EmailEditor';
+import { API_URL } from '../../config/api';
 import { Design } from '../../interfaces/emailEditor';
 import campaignService from '../../services/campaignService';
 import authService from '../../services/auth/authService';
@@ -82,7 +83,6 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
         setAvailableGroups(localGroups); // Establecer grupos locales inicialmente
         
         // Consultar si existe el registro "Gestión de Grupos de Contactos"
-        const API_URL = 'http://34.238.122.213:1337';
         const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userId}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
         
         console.log('Consultando URL para obtener grupos de contactos:', url);
@@ -337,17 +337,17 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
       
       // Primero intentar obtener los grupos desde el registro "Gestión de Grupos de Contactos"
       // para mantener los IDs consistentes
-      const API_URL = 'http://34.238.122.213:1337';
       let existingGroups: GrupoDeContactos[] = [];
       
       try {
-        // Obtener el usuario actual
-        const currentUser = authService.getCurrentUser();
-        const userId = currentUser?.id || 56; // Valor por defecto si no hay usuario
+        // Usar el currentUser que ya obtuvimos antes
+        const userId = currentUser?.id || 1; // Usar el ID del usuario logueado o 1 por defecto
         
-        // Consultar si existe el registro "Gestión de Grupos de Contactos"
-        const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userId}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
-        const response = await fetch(url);
+        console.log('Guardando campaña con datos:', campaignData);
+        
+        // 1. Primero verificar si ya existe un registro "Gestión de Grupos de Contactos"
+        const checkUrl = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userId}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
+        const response = await fetch(checkUrl);
         
         if (response.ok) {
           const jsonResponse = await response.json();

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { UserCampaignsData } from '../services/reportService';
+import { API_URL } from '../config/api';
 
 
 interface AiRecommendationsProps {
@@ -86,7 +87,7 @@ const transformReportDataToText = (data: UserCampaignsData | null): string => {
       fullText += "  Métricas de Interacción de Destinatarios (para esta campaña):\n";
       fullText += `    - Total de Clicks: ${totalInteractionClicks}\n`;
       fullText += `    - Total de Aperturas: ${totalInteractionOpens}\n`;
-      fullText += `    - Dinero Gastado (por interacciones): $${totalInteractionDineroGastado.toFixed(2)}\n`;
+      fullText += `    - Dinero Gastado (por interacciones): $${Number(totalInteractionDineroGastado || 0).toFixed(2)}\n`;
       fullText += `    - Registros en Página (por interacciones): ${totalInteractionRegistrations}\n`;
 
       if (campaign.gruposdecontactosJSON && campaign.gruposdecontactosJSON.grupos && campaign.gruposdecontactosJSON.grupos.length > 0) {
@@ -119,7 +120,7 @@ const AiRecommendations: React.FC<AiRecommendationsProps> = ({ reportData }) => 
   const [error, setError] = useState<string | null>(null);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
 
-  const STRAPI_AI_ENDPOINT = 'http://34.238.122.213:1337/api/open-ai/chat-proyecto-56';
+  const STRAPI_AI_ENDPOINT = `${API_URL}/api/open-ai/chat-proyecto-56`;
 
   // Function to save reportData to localStorage
   const saveReportDataToLocalStorage = (data: UserCampaignsData | null) => {
