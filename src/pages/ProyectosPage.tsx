@@ -41,7 +41,7 @@ const ProyectosPage: React.FC = () => {
       setError(null);
       
       try {
-        const response = await axios.get<ProyectosResponse>('http://34.238.122.213:1337/api/proyecto-56s');
+        const response = await axios.get<ProyectosResponse>('/api/proyecto-56s');
         console.log('Datos recibidos:', response.data);
         if (response.data && response.data.data && Array.isArray(response.data.data)) {
           setProyectos(response.data.data);
