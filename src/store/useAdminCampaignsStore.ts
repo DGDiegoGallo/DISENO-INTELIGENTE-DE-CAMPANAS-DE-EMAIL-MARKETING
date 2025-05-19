@@ -271,6 +271,12 @@ const useAdminCampaignsStore = create<AdminCampaignsState>((set) => ({
 
       // Filtrar campañas que tienen un usuario asociado en el JSON - VERSIÓN SIMPLIFICADA
       const validCampaigns = campaigns.filter(campaign => {
+        // Excluir campañas con nombre "Gestión de Grupos de Contactos"
+        if (campaign.nombre && campaign.nombre.trim() === 'Gestión de Grupos de Contactos') {
+          console.log(`[Store] Filtrando campaña ID: ${campaign.id} - Es de Gestión de Grupos de Contactos`);
+          return false;
+        }
+
         // Verificar si la campaña tiene un objeto usuario directamente
         if (campaign.usuario) {
           // Extraer datos del usuario

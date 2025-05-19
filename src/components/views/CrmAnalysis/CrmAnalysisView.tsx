@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 import crmService from '../../../services/crmService';
 import { CrmAnalysisContact, CrmStats } from '../../../interfaces/crm';
 import StatsCards from './StatsCards';
 import AnalyticsCharts from './AnalyticsCharts';
 import ContactsTable from './ContactsTable';
-import StatusMessage from './StatusMessage';
+import Pagination from '../../../components/common/Pagination';
+import { toast } from 'react-toastify';
 import CampaignDataSimulator from '../../../components/CampaignDataSimulator';
 import { 
   viewStyle, 
@@ -23,6 +24,11 @@ const CrmAnalysisView: React.FC = () => {
   const [crmStats, setCrmStats] = useState<CrmStats | null>(null);
   const [crmContacts, setCrmContacts] = useState<CrmAnalysisContact[]>([]);
   const [dataLoadedMsg, setDataLoadedMsg] = useState<string>('');
+  const prevDataLoadedMsg = useRef<string>('');
+  
+  // Estado para la paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5); // 10 contactos por página
 
   // Estados para los datos de los gráficos
   const [barData, setBarData] = useState({
@@ -46,6 +52,27 @@ const CrmAnalysisView: React.FC = () => {
       fill: true,
     }],
   });
+
+  // Efecto para mostrar notificaciones
+  useEffect(() => {
+    if (dataLoadedMsg && dataLoadedMsg !== prevDataLoadedMsg.current) {
+      const message = dataLoadedMsg.includes('simuladas') 
+        ? dataLoadedMsg.replace('simuladas', '') 
+        : dataLoadedMsg;
+      
+      toast.success(message, {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      
+      prevDataLoadedMsg.current = dataLoadedMsg;
+    }
+  }, [dataLoadedMsg]);
 
   // Función auxiliar para obtener el nombre del mes actual y los 4 anteriores
   const getPastMonthsLabels = useCallback((): string[] => {
@@ -222,10 +249,7 @@ const CrmAnalysisView: React.FC = () => {
         {/* El botón de Actualizar Datos ahora es únicamente el que provee CampaignDataSimulator */}
       </div>
       
-      {/* Mensaje de estado */}
-      {dataLoadedMsg && (
-        <StatusMessage message={dataLoadedMsg} />
-      )}
+      {/* El ToastContainer se renderiza en App.tsx */}
       
       {/* Resumen de estadísticas del CRM */}
       {crmStats && <StatsCards stats={crmStats} />}
@@ -244,7 +268,21 @@ const CrmAnalysisView: React.FC = () => {
 
       {/* Tabla de contactos CRM */}
       {crmContacts.length > 0 && (
-        <ContactsTable contacts={crmContacts} />
+        <div>
+          <ContactsTable 
+            contacts={crmContacts.slice(
+              (currentPage - 1) * itemsPerPage, 
+              currentPage * itemsPerPage
+            )} 
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalItems={crmContacts.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            primaryColor="#F21A2B"
+          />
+        </div>
       )}
 
       {/* El botón de carga inicial ahora está integrado en el botón de actualizar del header */}

@@ -164,8 +164,8 @@ const LoginPage: React.FC = () => {
                 <div className="alert alert-danger mb-3">{error}</div>
               )}
 
-              {/* Remember me & Forgot password */}
-              <div className="d-flex justify-content-between mb-4">
+              {/* Remember me */}
+              <div className="mb-4">
                 <div className="form-check">
                   <input
                     className="form-check-input"
@@ -178,8 +178,6 @@ const LoginPage: React.FC = () => {
                     Recordarme
                   </label>
                 </div>
-
-                <a href="#" className="text-decoration-none">¿Olvidé mi contraseña?</a>
               </div>
 
               {/* Login button */}

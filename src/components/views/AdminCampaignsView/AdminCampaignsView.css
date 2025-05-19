@@ -38,12 +38,59 @@
 .admin-campaigns-view-container .btn-danger {
   background-color: #F21A2B;
   border-color: #F21A2B;
+  transition: all 0.3s ease;
+}
+
+.admin-campaigns-view-container .btn-danger:hover {
+  background-color: #d01827;
+  border-color: #c51725;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-campaigns-view-container .btn-outline-danger {
+  color: #F21A2B;
+  border-color: #F21A2B;
+  background-color: transparent;
+  transition: all 0.3s ease;
+  margin-right: 10px;
+}
+
+.admin-campaigns-view-container .btn-outline-danger:hover {
+  background-color: #F21A2B;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-campaigns-view-container .btn-outline-danger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.admin-campaigns-view-container .btn-outline-danger:not(:disabled):hover {
+  background-color: #F21A2B;
+  color: white;
+}
+
+/* Button group spacing */
+.admin-campaigns-view-container .btn-group {
+  gap: 10px;
+}
+
+/* Button icons */
+.admin-campaigns-view-container .btn svg {
+  margin-right: 5px;
 }
 
 .admin-campaigns-view-container .btn-outline-secondary:hover {
   background-color: #F21A2B;
   border-color: #F21A2B;
   color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .admin-campaigns-view-container .badge.bg-primary {
@@ -73,9 +120,16 @@
 .admin-campaigns-view-container .metric-card {
   padding: 15px;
   border-radius: 8px;
-  background-color: #f8f9fa;
+  background-color: #ffffff;
   text-align: center;
   margin-bottom: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-campaigns-view-container .metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .admin-campaigns-view-container .metric-card h3 {

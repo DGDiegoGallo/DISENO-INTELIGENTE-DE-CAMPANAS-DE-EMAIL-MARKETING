@@ -150,7 +150,7 @@ const ContactsTable: React.FC<ContactsTableProps> = ({ contacts }) => {
             {/* Usar los datos procesados en lugar de los datos simulados */}
           {processedContacts.map((contact, index) => (
               <tr 
-                key={contact.email} 
+                key={`${contact.email}-${index}`} 
                 style={{ 
                   borderBottom: index === processedContacts.length - 1 ? 'none' : '1px solid #eee',
                   backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9'

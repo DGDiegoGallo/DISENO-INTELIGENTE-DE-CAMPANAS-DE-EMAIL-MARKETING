@@ -48,18 +48,7 @@ export const refreshIconStyle: React.CSSProperties = {
   marginRight: '8px'
 };
 
-export const statusMessageStyle: React.CSSProperties = {
-  padding: '10px 15px',
-  marginBottom: '20px',
-  borderRadius: '4px',
-  fontSize: '14px',
-  display: 'flex',
-  alignItems: 'center'
-};
-
-export const messageIconStyle: React.CSSProperties = {
-  marginRight: '10px'
-};
+// Estilos para mensajes eliminados - Ahora se usa Toastify
 
 export const actionButtonStyle: React.CSSProperties = {
   padding: '12px 24px',

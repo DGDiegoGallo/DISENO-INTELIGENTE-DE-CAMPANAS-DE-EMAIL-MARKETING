@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FaPencilAlt } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import ChangePasswordModal from '../ChangePasswordModal';
 import ChangeProfilePhotoModal from '../ChangeProfilePhotoModal';
 import useUserStore from '../../store/useUserStore';
 import { getAssetUrl } from '../../services/assetService';
+import userService from '../../services/userService';
+import { UpdateProfileData } from '../../interfaces/user';
 
 const ProfileView: React.FC = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -40,10 +43,15 @@ const ProfileView: React.FC = () => {
   const [formData, setFormData] = useState({
     nombre: user?.nombre || '',
     apellido: user?.apellido || '',
-    email: user?.email || 'ejemplo@gmail.com'
+    email: user?.email || 'ejemplo@gmail.com',
+    edad: user?.edad || '',
+    sexo: user?.sexo || '',
+    fechaDeNacimiento: user?.fechaDeNacimiento ? new Date(user.fechaDeNacimiento).toISOString().split('T')[0] : ''
   });
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -51,10 +59,34 @@ const ProfileView: React.FC = () => {
     });
   };
 
-  const handleSave = () => {
-    // Aquí iría la lógica para guardar los cambios del perfil
-    console.log('Guardando perfil:', formData);
-    // Mostrar alguna notificación de éxito
+  const handleSave = async () => {
+    if (!user || !user.id) {
+      toast.error('No se puede actualizar el perfil: usuario no identificado');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Preparar los datos a actualizar
+      const updateData: UpdateProfileData = {
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        edad: formData.edad ? Number(formData.edad) : undefined,
+        sexo: formData.sexo,
+        fechaDeNacimiento: formData.fechaDeNacimiento || undefined
+      };
+      
+      // Llamar al servicio para actualizar el perfil
+      await userService.updateUserProfile(user.id, updateData);
+      
+      toast.success('Perfil actualizado correctamente');
+    } catch (error) {
+      console.error('Error al actualizar el perfil:', error);
+      toast.error('Error al actualizar el perfil. Inténtelo de nuevo.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -66,8 +98,9 @@ const ProfileView: React.FC = () => {
             className="btn text-white" 
             style={{ backgroundColor: '#FF3A44' }}
             onClick={handleSave}
+            disabled={isSubmitting}
           >
-            Guardar
+            {isSubmitting ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </div>
@@ -150,6 +183,7 @@ const ProfileView: React.FC = () => {
                     placeholder="ejemplo@gmail.com"
                     value={formData.email}
                     onChange={handleInputChange}
+                    disabled // El email no se puede cambiar
                   />
                 </div>
                 
@@ -171,6 +205,50 @@ const ProfileView: React.FC = () => {
                       Cambiar contraseña
                     </button>
                   </div>
+                </div>
+                
+                <div className="col-md-4 mb-3">
+                  <label htmlFor="edad" className="form-label">Edad</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    id="edad"
+                    name="edad"
+                    placeholder="Edad"
+                    value={formData.edad}
+                    onChange={handleInputChange}
+                    min="0"
+                    max="120"
+                  />
+                </div>
+                
+                <div className="col-md-4 mb-3">
+                  <label htmlFor="sexo" className="form-label">Género</label>
+                  <select 
+                    className="form-select" 
+                    id="sexo"
+                    name="sexo"
+                    value={formData.sexo}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="masculino">Masculino</option>
+                    <option value="femenino">Femenino</option>
+                    <option value="otro">Otro</option>
+                    <option value="prefiero_no_decir">Prefiero no decir</option>
+                  </select>
+                </div>
+                
+                <div className="col-md-4 mb-3">
+                  <label htmlFor="fechaDeNacimiento" className="form-label">Fecha de nacimiento</label>
+                  <input 
+                    type="date" 
+                    className="form-control" 
+                    id="fechaDeNacimiento"
+                    name="fechaDeNacimiento"
+                    value={formData.fechaDeNacimiento}
+                    onChange={handleInputChange}
+                  />
                 </div>
               </div>
             </div>

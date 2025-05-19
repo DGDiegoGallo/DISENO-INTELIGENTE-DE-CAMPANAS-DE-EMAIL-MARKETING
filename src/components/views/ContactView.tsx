@@ -180,18 +180,16 @@ const ContactView: React.FC = () => {
           syncContactsFromStrapi(groupsData);
         } else {
           console.log('No se encontraron datos con grupos de contactos');
-          // Para usuarios sin grupos, inicializar con grupo predeterminado
-          const defaultGroups = ['General'];
-          setGroups(defaultGroups);
-          contactsService.saveAllGroups(defaultGroups);
+          // No inicializar con ningún grupo por defecto
+          setGroups([]);
+          contactsService.saveAllGroups([]);
           setStrapiGroups([]);
         }
       } else {
-        // Usuario nuevo sin datos, inicializar con valores predeterminados
-        console.log('No se encontraron datos para este usuario, inicializando valores predeterminados');
-        const defaultGroups = ['General'];
-        setGroups(defaultGroups);
-        contactsService.saveAllGroups(defaultGroups);
+        // Usuario nuevo sin datos, no inicializar con grupos por defecto
+        console.log('No se encontraron datos para este usuario, inicializando sin grupos por defecto');
+        setGroups([]);
+        contactsService.saveAllGroups([]);
         setStrapiGroups([]);
       }
     } catch (error) {

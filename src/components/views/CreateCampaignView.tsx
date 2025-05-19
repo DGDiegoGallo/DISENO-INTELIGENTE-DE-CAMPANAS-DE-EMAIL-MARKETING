@@ -136,17 +136,14 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
               const allLoadedGroups = contactsService.getAllGroups();
               const combinedGroups = [...new Set([...allLoadedGroups, ...strapiGroupNames])];
               
-              // Filtrar el grupo General
-              const filteredGroups = combinedGroups.filter(group => group !== 'General');
-              
-              // Actualizar estado y localStorage
-              setAvailableGroups(filteredGroups);
+              // Actualizar estado y localStorage con todos los grupos (sin filtrar 'General')
+              setAvailableGroups(combinedGroups);
               contactsService.saveAllGroups(combinedGroups);
               
-              console.log('Grupos disponibles actualizados desde Strapi:', filteredGroups);
+              console.log('Grupos disponibles actualizados desde Strapi:', combinedGroups);
               
-              // Si hay grupos de Strapi, no mostrar el modal
-              if (filteredGroups.length > 0) {
+              // Si hay grupos, no mostrar el modal
+              if (combinedGroups.length > 0) {
                 setShowNoGroupsAvailableModal(false);
                 return; // Salir de la función si encontramos grupos
               }

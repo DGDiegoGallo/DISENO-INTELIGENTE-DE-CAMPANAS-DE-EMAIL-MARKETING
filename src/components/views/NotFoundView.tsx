@@ -18,12 +18,9 @@ const NotFoundView: React.FC = () => {
               Lo sentimos, la página que estás buscando no existe o ha sido movida.
             </div>
             <div className="error-actions">
-              <Link to="/" className="btn btn-primary btn-lg me-3">
+              <Link to="/" className="btn btn-primary btn-lg">
                 <FaArrowLeft className="me-2" />
                 Volver al inicio
-              </Link>
-              <Link to="/support" className="btn btn-outline-secondary btn-lg">
-                Contactar soporte
               </Link>
             </div>
           </div>

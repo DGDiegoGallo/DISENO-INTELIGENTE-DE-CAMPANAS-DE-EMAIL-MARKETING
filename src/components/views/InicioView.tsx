@@ -32,19 +32,25 @@ const InicioView: React.FC = () => {
     setDataLoadedMsg('');
     try {
       const response: StrapiResponse<DetailedCampaign> = 
-        await campaignService.getUserCampaigns(1, 20, user.id);
+        await campaignService.getUserCampaigns(1, 50, user.id); // Increased limit to ensure we get all campaigns
       
       let processedData: DetailedCampaign[] = [];
       if (response && response.data) {
-        processedData = response.data.map(item => {
-          const extracted = extractStrapiData(item);
-          return {
-            ...extracted,
-            interaccion_destinatario: typeof extracted.interaccion_destinatario === 'object' && extracted.interaccion_destinatario !== null
-                                      ? extracted.interaccion_destinatario as InteraccionDestinatario
-                                      : null, 
-          } as DetailedCampaign;
-        });
+        processedData = response.data
+          .map(item => {
+            const extracted = extractStrapiData(item);
+            return {
+              ...extracted,
+              interaccion_destinatario: typeof extracted.interaccion_destinatario === 'object' && extracted.interaccion_destinatario !== null
+                                    ? extracted.interaccion_destinatario as InteraccionDestinatario
+                                    : null, 
+            } as DetailedCampaign;
+          })
+          // Filter out 'Gestión de Grupos de Contactos' campaign and emails with subject 'Sistema de Grupos'
+          .filter(campaign => 
+            campaign.nombre !== 'Gestión de Grupos de Contactos' && 
+            campaign.asunto !== 'Sistema de Grupos'
+          );
       }
 
       setCampaigns(processedData);

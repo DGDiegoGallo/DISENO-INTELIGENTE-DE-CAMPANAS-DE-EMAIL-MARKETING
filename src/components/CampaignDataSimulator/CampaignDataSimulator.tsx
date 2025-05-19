@@ -250,24 +250,34 @@ const CampaignDataSimulator: React.FC<CampaignDataSimulatorProps> = ({ onDataSim
       }
 
       setStatus({ 
-        message: `Actualizando ${sentCampaigns.length} campañas con datos simulados...`, 
+        message: `Actualizando ${sentCampaigns.length} campañas con datos...`, 
         type: 'info' 
       });
       
       setProcessedCampaigns(prev => ({ ...prev, total: sentCampaigns.length }));
       
-      // Actualizar cada campaña con datos simulados
+      // Actualizar cada campaña con datos
       let successCount = 0;
+      let skippedCount = 0;
       let failedCount = 0;
       
       for (let i = 0; i < sentCampaigns.length; i++) {
         const campaign = sentCampaigns[i];
+        
         try {
           // Verificar que la campaña tenga un documentId válido
           if (!campaign.documentId) {
             console.error('Campaña sin documentId válido:', campaign);
             failedCount++;
             setProcessedCampaigns(prev => ({ ...prev, failed: failedCount }));
+            continue;
+          }
+          
+          // Verificar si la campaña ya tiene ingresos (dinero_gastado)
+          if (campaign.dinero_gastado && parseFloat(campaign.dinero_gastado) > 0) {
+            console.log(`Campaña ${campaign.documentId} ya tiene ingresos, omitiendo...`);
+            skippedCount++;
+            setProcessedCampaigns(prev => ({ ...prev, skipped: skippedCount }));
             continue;
           }
           
@@ -297,7 +307,7 @@ const CampaignDataSimulator: React.FC<CampaignDataSimulatorProps> = ({ onDataSim
 
       // Actualizar estado final
       setStatus({ 
-        message: `Actualización completada. ${successCount} campañas actualizadas correctamente.`, 
+        message: 'Actualización completada. Campañas actualizadas correctamente.', 
         type: 'success',
         details: failedCount > 0 ? `${failedCount} campañas no se pudieron actualizar.` : undefined
       });

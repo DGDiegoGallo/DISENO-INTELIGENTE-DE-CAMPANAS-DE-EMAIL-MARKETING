@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
-import { FaArrowLeft, FaSync, FaChartLine, FaEye, FaUser, FaCalendarAlt, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import React, { useEffect, useCallback, useState } from 'react';
+import { FaArrowLeft, FaSync, FaChartLine, FaEye, FaUser, FaCalendarAlt, FaCheckCircle, FaExclamationCircle, FaFilePdf } from 'react-icons/fa';
 import useAdminCampaignsStore from '../../../store/useAdminCampaignsStore';
+import { generateAdminCampaignsPDF } from './AdminCampaignsPDFGenerator';
 import './AdminCampaignsView.css';
 
 /**
@@ -33,6 +34,51 @@ const AdminCampaignsView: React.FC = () => {
     ? campaigns.filter(campaign => campaign.usuario.id === selectedUser)
     : campaigns;
 
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  const handleGeneratePDF = useCallback(async () => {
+    if (isGeneratingPDF) return;
+    
+    setIsGeneratingPDF(true);
+    setPdfError(null);
+    
+    try {
+      const selectedUserData = selectedUser ? users.find(u => u.id === selectedUser) : null;
+      const selectedUserName = selectedUserData 
+        ? `${selectedUserData.nombre || ''} ${selectedUserData.apellido || ''}`.trim() || selectedUserData.username
+        : null;
+
+      if (filteredCampaigns.length === 0) {
+        throw new Error('No hay campañas disponibles para generar el reporte');
+      }
+
+      // Small delay to allow the loading state to show
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      await generateAdminCampaignsPDF({
+        campaigns: filteredCampaigns,
+        stats,
+        selectedUserName
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Error al generar el PDF. Por favor, intente nuevamente.';
+      setPdfError(errorMessage);
+      
+      // Show error for 5 seconds then clear it
+      const timer = setTimeout(() => {
+        setPdfError(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  }, [filteredCampaigns, selectedUser, stats, users, isGeneratingPDF]);
+
   return (
     <div className="admin-campaigns-view-container">
       <div style={{ 
@@ -48,28 +94,55 @@ const AdminCampaignsView: React.FC = () => {
           />
           <h2 style={{ margin: 0, color: '#333', fontSize: '20px' }}>Campañas de Usuarios</h2>
         </div>
-        <button 
-          className="btn btn-danger d-flex align-items-center"
-          onClick={loadData}
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Cargando...
-            </>
-          ) : (
-            <>
-              <FaSync className="me-2" /> Actualizar
-            </>
-          )}
-        </button>
+        <div className="btn-group" role="group" aria-label="Acciones">
+          <button 
+            className="btn btn-outline-danger d-flex align-items-center"
+            onClick={handleGeneratePDF}
+            disabled={loading || campaigns.length === 0 || isGeneratingPDF}
+            title={campaigns.length === 0 ? "No hay campañas para generar el reporte" : "Generar Reporte en PDF"}
+          >
+            {isGeneratingPDF ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Generando...
+              </>
+            ) : (
+              <>
+                <FaFilePdf className="me-2" /> Generar Reporte
+              </>
+            )}
+          </button>
+          <button 
+            className="btn btn-danger d-flex align-items-center"
+            onClick={loadData}
+            disabled={loading || isGeneratingPDF}
+            title="Actualizar datos"
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Cargando...
+              </>
+            ) : (
+              <>
+                <FaSync className="me-2" /> Actualizar
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Mensaje de error */}
+      {/* Mensajes de error */}
       {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
+        <div className="alert alert-danger d-flex align-items-center" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          <div>{error}</div>
+        </div>
+      )}
+      {pdfError && (
+        <div className="alert alert-warning d-flex align-items-center" role="alert">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          <div>{pdfError}</div>
         </div>
       )}
 
