@@ -8,12 +8,13 @@ import Chart from 'chart.js/auto';
 import { ABTest } from '../services/abTestingService';
 
 // Extender jsPDF con autotable
+import { UserOptions } from 'jspdf-autotable';
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: Record<string, unknown>) => jsPDF;
+    autoTable: (options: UserOptions) => jsPDF;
     lastAutoTable: {
       finalY: number;
-    };
+    } | undefined;
   }
 }
 

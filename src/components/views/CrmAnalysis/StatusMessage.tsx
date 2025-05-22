@@ -1,6 +1,5 @@
 import React from 'react';
 import { FaInfoCircle } from 'react-icons/fa';
-import { statusMessageStyle, messageIconStyle } from './styles';
 
 interface StatusMessageProps {
   message: string;
@@ -11,12 +10,17 @@ const StatusMessage: React.FC<StatusMessageProps> = ({ message }) => {
   
   return (
     <div style={{ 
-      ...statusMessageStyle,
+      padding: '10px 15px',
+      borderRadius: '4px',
+      marginBottom: '15px',
+      display: 'flex',
+      alignItems: 'center',
       backgroundColor: isError ? '#ffe6e6' : '#e6ffe6'
     }}>
       <FaInfoCircle 
         style={{ 
-          ...messageIconStyle, 
+          fontSize: '18px',
+          marginRight: '10px',
           color: isError ? '#c00' : '#0c0' 
         }} 
       />
