@@ -168,6 +168,7 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
           options={{
             customCSS: [
               `body { font-family: Arial, sans-serif; }`,
+              `@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;600;700&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Source+Sans+Pro:wght@300;400;600;700&family=Raleway:wght@300;400;500;600;700&display=swap')`,
             ],
             features: {
               colorPicker: {
@@ -192,6 +193,44 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
                 properties: {
                   color: {
                     value: '#282A5B'
+                  },
+                  font: {
+                    options: [
+                      { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+                      { value: 'Roboto, sans-serif', label: 'Roboto' },
+                      { value: 'Open Sans, sans-serif', label: 'Open Sans' },
+                      { value: 'Lato, sans-serif', label: 'Lato' },
+                      { value: 'Montserrat, sans-serif', label: 'Montserrat' },
+                      { value: 'Poppins, sans-serif', label: 'Poppins' },
+                      { value: 'Playfair Display, serif', label: 'Playfair Display' },
+                      { value: 'Merriweather, serif', label: 'Merriweather' },
+                      { value: 'Source Sans Pro, sans-serif', label: 'Source Sans Pro' },
+                      { value: 'Raleway, sans-serif', label: 'Raleway' },
+                      { value: 'Georgia, serif', label: 'Georgia' },
+                      { value: 'Times New Roman, Times, serif', label: 'Times New Roman' },
+                      { value: 'Courier New, Courier, monospace', label: 'Courier New' }
+                    ]
+                  }
+                }
+              },
+              text: {
+                properties: {
+                  font: {
+                    options: [
+                      { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+                      { value: 'Roboto, sans-serif', label: 'Roboto' },
+                      { value: 'Open Sans, sans-serif', label: 'Open Sans' },
+                      { value: 'Lato, sans-serif', label: 'Lato' },
+                      { value: 'Montserrat, sans-serif', label: 'Montserrat' },
+                      { value: 'Poppins, sans-serif', label: 'Poppins' },
+                      { value: 'Playfair Display, serif', label: 'Playfair Display' },
+                      { value: 'Merriweather, serif', label: 'Merriweather' },
+                      { value: 'Source Sans Pro, sans-serif', label: 'Source Sans Pro' },
+                      { value: 'Raleway, sans-serif', label: 'Raleway' },
+                      { value: 'Georgia, serif', label: 'Georgia' },
+                      { value: 'Times New Roman, Times, serif', label: 'Times New Roman' },
+                      { value: 'Courier New, Courier, monospace', label: 'Courier New' }
+                    ]
                   }
                 }
               },
@@ -199,6 +238,23 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
                 properties: {
                   color: {
                     value: '#F21A2B'
+                  },
+                  font: {
+                    options: [
+                      { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+                      { value: 'Roboto, sans-serif', label: 'Roboto' },
+                      { value: 'Open Sans, sans-serif', label: 'Open Sans' },
+                      { value: 'Lato, sans-serif', label: 'Lato' },
+                      { value: 'Montserrat, sans-serif', label: 'Montserrat' },
+                      { value: 'Poppins, sans-serif', label: 'Poppins' },
+                      { value: 'Playfair Display, serif', label: 'Playfair Display' },
+                      { value: 'Merriweather, serif', label: 'Merriweather' },
+                      { value: 'Source Sans Pro, sans-serif', label: 'Source Sans Pro' },
+                      { value: 'Raleway, sans-serif', label: 'Raleway' },
+                      { value: 'Georgia, serif', label: 'Georgia' },
+                      { value: 'Times New Roman, Times, serif', label: 'Times New Roman' },
+                      { value: 'Courier New, Courier, monospace', label: 'Courier New' }
+                    ]
                   }
                 }
               }
