@@ -707,7 +707,11 @@ const CreateCampaignView: React.FC<CreateCampaignViewProps> = ({ onBack }) => {
                 id="scheduledTime" 
                 value={campaignData.scheduledTime}
                 onChange={handleInputChange}
-                min={new Date().toISOString().slice(0, 16)}
+                min={(() => {
+                  const date = new Date();
+                  date.setDate(date.getDate() - 1); // Allow selecting dates one day earlier
+                  return date.toISOString().slice(0, 16);
+                })()}
               />
               {formState.error && formState.error.includes('hora de envío') && (
                 <div className="invalid-feedback">{formState.error}</div>

@@ -82,7 +82,7 @@ const RatingCard: React.FC<RatingCardProps> = ({ title, value, type }) => {
       <div style={gradeStyle}>{letter}</div>
       <div style={titleStyleInternal}>{title}</div>
       <div style={valueStyle}>
-        {type === 'economic' ? `$${value.toLocaleString()}` : value.toLocaleString()}
+        {type === 'economic' ? `$${value.toFixed(2)}` : value.toLocaleString()}
       </div>
     </div>
   );

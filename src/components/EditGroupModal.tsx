@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ModalWrapper from './ModalWrapper';
 import { FaPlus, FaUserPlus, FaUserMinus } from 'react-icons/fa';
+import ConfirmModal from './ConfirmModal';
+import * as contactsService from '../services/contactsService';
 
 interface Contact {
   id: number;
@@ -111,6 +113,10 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
   const [tempContactsOutGroup, setTempContactsOutGroup] = useState<Array<Contact>>([]);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Estado para el modal de confirmación
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [contactToRemove, setContactToRemove] = useState<Contact | null>(null);
+
   // Actualizar el grupo seleccionado y los contactos temporales cuando cambian los props
   useEffect(() => {
     if (isOpen) {
@@ -161,18 +167,32 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
     }
   };
 
-  // Mover un contacto del grupo a fuera del grupo
-  const moveContactOutOfGroup = (contactId: number) => {
-    const contactToMove = tempContactsInGroup.find(c => c.id === contactId);
-    if (contactToMove) {
-      // Añadir a la lista de fuera del grupo sin modificar su grupo original
-      setTempContactsOutGroup([...tempContactsOutGroup, contactToMove]);
+  // Abrir modal de confirmación para eliminar contacto del grupo
+  const openRemoveConfirmModal = (contactId: number) => {
+    const contact = tempContactsInGroup.find(c => c.id === contactId);
+    if (contact) {
+      setContactToRemove(contact);
+      setShowConfirmModal(true);
+    }
+  };
+
+  // Eliminar permanentemente un contacto después de confirmación
+  const deleteContact = () => {
+    if (contactToRemove) {
+      // Eliminar permanentemente el contacto usando el servicio
+      contactsService.removeContact(contactToRemove.id);
       
-      // Remover del grupo temporal
-      setTempContactsInGroup(tempContactsInGroup.filter(c => c.id !== contactId));
+      // Actualizar la lista de contactos en el grupo
+      setTempContactsInGroup(tempContactsInGroup.filter(c => c.id !== contactToRemove.id));
       
       // Marcar que hay cambios
       setHasChanges(true);
+      
+      // Limpiar el contacto seleccionado
+      setContactToRemove(null);
+      
+      // Cerrar el modal de confirmación
+      setShowConfirmModal(false);
     }
   };
 
@@ -291,10 +311,10 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
                           <GroupTag groupName={selectedGroup} />
                           <button 
                             style={actionButtonStyle}
-                            onClick={() => moveContactOutOfGroup(contact.id)}
-                            title="Sacar de este grupo"
+                            onClick={() => openRemoveConfirmModal(contact.id)}
+                            title="Eliminar de este grupo"
                           >
-                            <FaUserMinus style={{ marginRight: '5px' }} /> Sacar
+                            <FaUserMinus style={{ marginRight: '5px' }} /> Eliminar
                           </button>
                         </div>
                       </div>
@@ -413,6 +433,17 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
           </button>
         </>
       )}
+      
+      {/* Modal de confirmación para eliminar contactos permanentemente */}
+      <ConfirmModal 
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={deleteContact}
+        title="Confirmar eliminación"
+        message={contactToRemove ? `¿Estás seguro de eliminar permanentemente a "${contactToRemove.name}"? Esta acción no se puede deshacer.` : ''}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+      />
     </ModalWrapper>
   );
 };

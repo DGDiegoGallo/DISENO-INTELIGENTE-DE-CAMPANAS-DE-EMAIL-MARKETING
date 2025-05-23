@@ -185,6 +185,24 @@ const EmailEditorComponent: React.FC<EmailEditorComponentProps> = ({
             },
             // Configuración y desactivación de herramientas específicas
             displayMode: 'email',
+            fonts: {
+              showDefaultFonts: true,
+              customFonts: [
+                { label: 'Arial', value: 'Arial, Helvetica, sans-serif', url: '' },
+                { label: 'Roboto', value: 'Roboto, sans-serif', url: 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap' },
+                { label: 'Open Sans', value: 'Open Sans, sans-serif', url: 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap' },
+                { label: 'Lato', value: 'Lato, sans-serif', url: 'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap' },
+                { label: 'Montserrat', value: 'Montserrat, sans-serif', url: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap' },
+                { label: 'Poppins', value: 'Poppins, sans-serif', url: 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap' },
+                { label: 'Playfair Display', value: 'Playfair Display, serif', url: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap' },
+                { label: 'Merriweather', value: 'Merriweather, serif', url: 'https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap' },
+                { label: 'Source Sans Pro', value: 'Source Sans Pro, sans-serif', url: 'https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap' },
+                { label: 'Raleway', value: 'Raleway, sans-serif', url: 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap' },
+                { label: 'Georgia', value: 'Georgia, serif', url: '' },
+                { label: 'Times New Roman', value: 'Times New Roman, Times, serif', url: '' },
+                { label: 'Courier New', value: 'Courier New, Courier, monospace', url: '' }
+              ]
+            },
             tools: {
               image: {
                 enabled: false

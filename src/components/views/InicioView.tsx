@@ -60,7 +60,8 @@ const InicioView: React.FC = () => {
       let aggDinero = 0;
 
       processedData.forEach(campaign => {
-        if (campaign.interaccion_destinatario) {
+        // Only calculate metrics for campaigns with estado === 'enviado'
+        if (campaign.interaccion_destinatario && campaign.estado === 'enviado') {
           Object.values(campaign.interaccion_destinatario).forEach(interaction => {
             aggOpens += interaction.opens || 0;
             aggClicks += interaction.clicks || 0;
