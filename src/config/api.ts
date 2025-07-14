@@ -1,5 +1,5 @@
 // Central API configuration
-export const API_URL = 'http://34.238.122.213:1337';
+export const API_URL = 'https://strapi.useteam.io';
 
 export const API_ENDPOINTS = {
   AUTH: '/api/auth/local',

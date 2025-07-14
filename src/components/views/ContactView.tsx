@@ -305,7 +305,6 @@ const ContactView: React.FC = () => {
       };
       
       // Usar el endpoint API directo que filtra por ID de usuario Y nombre específico
-      const API_URL = 'http://34.238.122.213:1337';
       // Filtrar específicamente por el registro "Gestión de Grupos de Contactos" del usuario actual
       const url = `${API_URL}/api/proyecto-56s?populate=usuario&filters[usuario][id][$eq]=${userIdToUse}&filters[nombre][$eq]=Gestión de Grupos de Contactos`;
       

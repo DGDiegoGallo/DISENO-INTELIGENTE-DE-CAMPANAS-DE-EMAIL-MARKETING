@@ -65,7 +65,7 @@ export async function sendMessageToAI(
     };
 
     // URL del endpoint de Strapi que maneja la comunicación con OpenAI
-    const strapiEndpoint = 'http://34.238.122.213:1337/api/open-ai/49';
+    const strapiEndpoint = 'https://strapi.useteam.io/api/open-ai/49';
 
     // Realizar la petición a Strapi
     const { data } = await axios.post<AIResponse>(strapiEndpoint, conversationPayload);
@@ -133,7 +133,7 @@ async function exampleConversation() {
  * Para probar directamente la API con una herramienta como Insomnia o Postman,
  * puedes usar el siguiente formato de body:
  * 
- * URL: http://34.238.122.213:1337/api/open-ai/49
+ * URL: https://strapi.useteam.io/api/open-ai/49
  * Método: POST
  * Headers: Content-Type: application/json
  * 
@@ -203,7 +203,7 @@ export const ChatComponent = () => {
       };
 
       const { data } = await axios.post(
-        'http://34.238.122.213:1337/api/open-ai/49', 
+        'https://strapi.useteam.io/api/open-ai/49', 
         conversationPayload
       );
 
